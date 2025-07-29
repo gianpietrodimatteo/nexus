@@ -12,3 +12,393 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// Enums
+enum UserRole {
+  ADMIN
+  SE
+  CLIENT
+}
+
+enum PipelinePhase {
+  DISCOVERY_SURVEY
+  DISCOVERY_DEEP_DIVE
+  ADA_PROPOSAL_SENT
+  ADA_PROPOSAL_REVIEW
+  ADA_CONTRACT_SENT
+  ADA_CONTRACT_SIGNED
+  CREDENTIALS_COLLECTED
+  FACTORY_BUILD
+  TEST_PLAN_GENERATED
+  TESTING_STARTED
+  PRODUCTION_DEPLOY
+}
+
+enum ExceptionType {
+  AUTHENTICATION
+  DATA_PROCESS
+  INTEGRATION
+  WORKFLOW_LOGIC
+  BROWSER_AUTOMATION
+}
+
+enum ExceptionSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ExceptionStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  IGNORED
+}
+
+enum ExecutionStatus {
+  SUCCESS
+  FAILED
+  IN_PROGRESS
+}
+
+enum PricingModel {
+  CONSUMPTION
+}
+
+enum ContractLength {
+  MONTH
+  QUARTER
+  YEAR
+}
+
+enum BillingCadence {
+  MONTHLY
+  QUARTERLY
+}
+
+enum PaymentMethod {
+  STRIPE
+  ERP
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum ProductUsageAPI {
+  AIR_DIRECT
+  NEXUS_BASE
+}
+
+enum DocumentType {
+  SURVEY_QUESTIONS
+  SURVEY_RESULTS
+  PROCESS_DOC
+  ADA_PROPOSAL
+  CONTRACT
+  FACTORY_MARKDOWN
+  TEST_PLAN
+}
+
+enum CredentialStatus {
+  CONNECTED
+  DISCONNECTED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+}
+
+// Core Models
+model User {
+  id    String   @id @default(cuid())
+  email String   @unique
+  name  String
+  phone String?
+  role  UserRole
+
+  // Organization relationship
+  organizationId String?
+  organization   Organization? @relation("OrganizationUsers", fields: [organizationId], references: [id])
+
+  // Client-specific fields
+  departmentId            String?
+  department              Department? @relation(fields: [departmentId], references: [id])
+  billingAccess           Boolean     @default(false)
+  adminAccess             Boolean     @default(false)
+  notificationPreferences Json?
+
+  // SE-specific fields
+  hourlyRateCost     Decimal?
+  hourlyRateBillable Decimal?
+
+  // SE assignments (many-to-many)
+  assignedOrganizations Organization[] @relation("AssignedSEs")
+
+  // Audit trail
+  creditsApplied Credit[]   @relation("AppliedBy")
+  auditLogs      AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([role])
+}
+
+model Organization {
+  id               String    @id @default(cuid())
+  name             String
+  url              String?
+  contractStartDate DateTime?
+  contractEndDate   DateTime?
+  pipelinePhase     PipelinePhase @default(DISCOVERY_SURVEY)
+
+  // Relationships
+  users            User[]            @relation("OrganizationUsers")
+  assignedSEs      User[]            @relation("AssignedSEs")
+  departments      Department[]
+  workflows        Workflow[]
+  exceptions       Exception[]
+  credentials      Credential[]
+  documentLinks    DocumentLink[]
+  pipelinePhases   PipelinePhaseLog[]
+  invoices         Invoice[]
+  credits          Credit[]
+  auditLogs        AuditLog[]
+
+  // Subscription
+  subscriptionPlanId String?
+  subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contractStartDate])
+  @@index([pipelinePhase])
+}
+
+model Department {
+  id             String @id @default(cuid())
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  users      User[]
+  workflows  Workflow[]
+  exceptions Exception[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model Workflow {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+  nodeCount   Int     @default(0)
+
+  // Performance metrics
+  timeSavedPerExecution  Int?     // minutes
+  moneySavedPerExecution Decimal?
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  executions Execution[]
+  exceptions Exception[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, isActive])
+  @@index([departmentId])
+}
+
+model Execution {
+  id               String          @id @default(cuid())
+  status           ExecutionStatus @default(IN_PROGRESS)
+  executionDetails Json?
+
+  // Relationships
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([workflowId, createdAt])
+  @@index([status])
+}
+
+model Exception {
+  id       String            @id @default(cuid())
+  type     ExceptionType
+  severity ExceptionSeverity
+  status   ExceptionStatus   @default(NEW)
+  remedy   String?
+
+  // Relationships
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  reportedAt DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([organizationId, reportedAt])
+  @@index([status, severity])
+  @@index([workflowId])
+}
+
+model SubscriptionPlan {
+  id                   String          @id @default(cuid())
+  name                 String
+  pricingModel         PricingModel    @default(CONSUMPTION)
+  contractLength       ContractLength
+  billingCadence       BillingCadence
+  setupFee             Decimal         @default(0)
+  prepaymentPercentage Decimal         @default(0)
+  capAmount            Decimal?
+  overageCost          Decimal         @default(0)
+  creditsPerPeriod     Int             @default(0)
+  pricePerCredit       Decimal         @default(0)
+  productUsageAPI      ProductUsageAPI @default(NEXUS_BASE)
+
+  // Relationships
+  organizations Organization[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceDate   DateTime      @default(now())
+  dueDate       DateTime
+  amount        Decimal
+  paymentMethod PaymentMethod
+  status        InvoiceStatus @default(PENDING)
+
+  // Stripe integration
+  stripeInvoiceId String?
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, invoiceDate])
+  @@index([status])
+}
+
+model Credit {
+  id     String  @id @default(cuid())
+  amount Decimal
+  reason String
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  appliedBy   String
+  appliedByUser User   @relation("AppliedBy", fields: [appliedBy], references: [id])
+
+  appliedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+}
+
+model Credential {
+  id            String           @id @default(cuid())
+  serviceName   String
+  encryptedData Json // Encrypted credential data
+  status        CredentialStatus @default(DISCONNECTED)
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@unique([organizationId, serviceName])
+}
+
+model DocumentLink {
+  id   String       @id @default(cuid())
+  type DocumentType
+  url  String
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model PipelinePhaseLog {
+  id    String        @id @default(cuid())
+  phase PipelinePhase
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([organizationId])
+  @@unique([organizationId, phase])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  action     AuditAction
+  entityType String
+  entityId   String
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+
+  // Relationships
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  timestamp DateTime @default(now())
+
+  @@index([organizationId, timestamp])
+  @@index([userId])
+  @@index([entityType, entityId])
+}
