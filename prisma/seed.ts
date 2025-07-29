@@ -1,9 +1,13 @@
 import { PrismaClient, UserRole, PipelinePhase, ContractLength, BillingCadence, PricingModel, ProductUsageAPI } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Starting database seed...')
+
+  // Hash password for all users (password: "password123")
+  const hashedPassword = await bcrypt.hash('password123', 12)
 
   // Create subscription plans first
   const basicPlan = await prisma.subscriptionPlan.upsert({
@@ -65,7 +69,8 @@ async function main() {
       organizationId: null,
       departmentId: null,
       billingAccess: false,
-      adminAccess: false
+      adminAccess: false,
+      password: hashedPassword
     }
   })
 
@@ -84,7 +89,8 @@ async function main() {
       hourlyRateCost: 75,
       hourlyRateBillable: 150,
       billingAccess: false,
-      adminAccess: false
+      adminAccess: false,
+      password: hashedPassword
     }
   })
 
@@ -105,7 +111,8 @@ async function main() {
       notificationPreferences: {
         email: true,
         sms: false
-      }
+      },
+      password: hashedPassword
     }
   })
 

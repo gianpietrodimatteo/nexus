@@ -117,11 +117,12 @@ enum AuditAction {
 
 // Core Models
 model User {
-  id    String   @id @default(cuid())
-  email String   @unique
-  name  String
-  phone String?
-  role  UserRole
+  id       String   @id @default(cuid())
+  email    String   @unique
+  password String
+  name     String
+  phone    String?
+  role     UserRole
 
   // Organization relationship
   organizationId String?
