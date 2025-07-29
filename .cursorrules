@@ -1,7 +1,23 @@
 # Project Purpose
 
-One **Next.js 14** code‑base that hosts both _Admin_ and _Client_ dashboards for the Nexus platform.  
-Tech stack: **React 19, TypeScript (strict), Tailwind + shadcn‑ui, tRPC, Prisma, PostgreSQL, next‑auth**.
+One **Next.js 14** code‑base that hosts both _Admin_ and _Client_ dashboards for the Nexus platform.  
+Tech stack: **React 19, TypeScript (strict), Tailwind + shadcn‑ui, tRPC, Prisma, PostgreSQL, next‑auth**.
+
+---
+
+## Test Project Constraints
+
+| Area | Constraint |
+|------|------------|
+| **Authentication** | Basic email/password with next-auth. No OAuth, SSO, or 2FA required. |
+| **Database** | Single shared PostgreSQL database for both Admin and Client apps. |
+| **Platform** | Desktop web only - no mobile responsive design needed. |
+| **Notifications** | Email only - no SMS provider integration required. |
+| **Data retention** | Keep all logs/exceptions/execution history indefinitely. |
+| **Accessibility** | Not required - focus on functionality and design quality. |
+| **Missing designs** | Create reasonable loading, error, empty states where Figma is incomplete. |
+
+**Development Priorities**: 1) Functionality 2) Code quality 3) Design accuracy
 
 ---
 
@@ -41,13 +57,14 @@ Tech stack: **React 19, TypeScript (strict), Tailwind + shadcn‑ui, tRPC, 
 
 * **Migrations** via `prisma migrate dev` (local) & `prisma migrate deploy` (CI/prod).  
 * No raw SQL unless Prisma cannot express the query; wrap raw calls in repository helper.
+* **Access control** via organization-scoped queries and role-based middleware.
 
 ---
 
 ## Deployment
 
 * **Local**: `pnpm db:up && pnpm dev` (starts Docker Postgres + Next dev).  
-* **CI**   : GitHub Actions `build-lint-test`.  
+* **CI**   : GitHub Actions `build-lint-test`.  
 * **Prod**: Vercel build runs `postinstall → prisma migrate deploy` against Neon.
 
 ---
