@@ -273,6 +273,171 @@ When adding authentication to existing users:
 3. **Update seed data**: Include password hashes
 4. **Test role transitions**: Verify permission changes
 
+## RBAC Guard Implementation
+
+### RBAC Guard Overview
+
+The Nexus platform implements automatic Role-Based Access Control (RBAC) enforcement at the database level using Prisma Client Extensions. This ensures that all database queries are automatically scoped to the user's allowed organizations, preventing accidental cross-tenant data exposure.
+
+### Architecture
+
+```
+src/server/
+├── auth/
+│   └── getAllowedOrgs.ts    # Computes user's allowed organization IDs
+├── prisma/
+│   ├── client.ts            # Prisma singleton + RBAC client factory
+│   └── middleware/
+│       └── rbacGuard.ts     # Prisma extension for automatic filtering
+└── trpc/
+    ├── context.ts           # Request context with RBAC-aware Prisma client
+    ├── client.ts            # tRPC initialization with auth procedures
+    └── router.ts            # Main app router
+```
+
+### Components
+
+#### 1. Organization Access Computation
+
+```typescript
+// src/server/auth/getAllowedOrgs.ts
+export async function getAllowedOrgIds(
+  session: AuthSession | null,
+): Promise<string[] | undefined> {
+  switch (session?.user?.role) {
+    case 'ADMIN':
+      return undefined          // Unrestricted access
+    case 'SE':
+      // Query assigned organizations
+      const orgs = await prisma.organization.findMany({
+        where: { assignedSEs: { some: { id: session.user.id } } },
+        select: { id: true }
+      })
+      return orgs.map(o => o.id)
+    case 'CLIENT':
+      return [session.user.organizationId]  // Single org access
+    default:
+      return []                // Deny access
+  }
+}
+```
+
+#### 2. Automatic Query Filtering
+
+```typescript
+// src/server/prisma/middleware/rbacGuard.ts
+export const rbacGuard = (allowedOrgIds: string[] | undefined) => {
+  return Prisma.defineExtension({
+    name: 'rbacGuard',
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          // Skip filtering for admin users
+          if (allowedOrgIds === undefined) return query(args)
+          
+          // Auto-inject organizationId filter for models that have it
+          if (hasOrganizationIdField(model) && supportsWhereClause(operation)) {
+            args.where = {
+              AND: [
+                args.where || {},
+                { organizationId: { in: allowedOrgIds } }
+              ]
+            }
+          }
+          
+          return query(args)
+        }
+      }
+    }
+  })
+}
+```
+
+#### 3. Request-Scoped RBAC Client
+
+```typescript
+// src/server/trpc/context.ts
+export async function createContext() {
+  const session = await getServerSession(authOptions) as AuthSession | null
+  const allowedOrgIds = await getAllowedOrgIds(session)
+  
+  return {
+    session,
+    prisma: createRbacPrisma(allowedOrgIds)  // RBAC-aware client
+  }
+}
+```
+
+### Usage Patterns
+
+#### Automatic Protection in tRPC Procedures
+
+```typescript
+// Any tRPC procedure automatically gets organization-scoped queries
+export const getWorkflows = protectedProcedure
+  .query(async ({ ctx }) => {
+    // This query is automatically filtered by user's allowed organizations
+    return ctx.prisma.workflow.findMany({
+      where: { isActive: true },
+      include: { department: true }
+    })
+  })
+```
+
+#### Manual RBAC Client Creation
+
+```typescript
+// For use outside tRPC (e.g., in API routes)
+import { getServerSession } from 'next-auth'
+import { authOptions, getAllowedOrgIds } from '@/server/auth'
+import { createRbacPrisma } from '@/server/prisma/client'
+
+export async function GET() {
+  const session = await getServerSession(authOptions)
+  const allowedOrgIds = await getAllowedOrgIds(session)
+  const prisma = createRbacPrisma(allowedOrgIds)
+  
+  // All queries automatically scoped
+  const workflows = await prisma.workflow.findMany()
+  return Response.json(workflows)
+}
+```
+
+### Security Benefits
+
+| Feature | Benefit |
+|---------|---------|
+| **Automatic Enforcement** | Impossible to forget organization filtering |
+| **Zero Boilerplate** | No manual `organizationId` filters needed |
+| **Type Safety** | Full TypeScript support with proper context |
+| **Performance** | Single request, no additional DB queries |
+| **Defense in Depth** | Works alongside route-level guards |
+
+### Models Protected
+
+The RBAC guard automatically applies to these models with `organizationId` fields:
+
+- `Organization` (filtered by ID directly)
+- `Department` (via `organizationId`)
+- `Workflow` (via `organizationId`)
+- `Exception` (via `organizationId`)
+- `Credential` (via `organizationId`)
+- `DocumentLink` (via `organizationId`)
+- `PipelinePhaseLog` (via `organizationId`)
+- `Invoice` (via `organizationId`)
+- `Credit` (via `organizationId`)
+- `AuditLog` (via `organizationId`)
+
+### Bypass for System Operations
+
+```typescript
+// For system-level operations that need unrestricted access
+import { prisma } from '@/server/prisma/client'  // Base client
+
+// Direct access without RBAC filtering (use carefully)
+const allOrganizations = await prisma.organization.findMany()
+```
+
 ## Security Considerations
 
 - **Never log passwords** or session tokens
@@ -281,3 +446,5 @@ When adding authentication to existing users:
 - **Monitor failed login attempts**
 - **Implement rate limiting** for auth endpoints
 - **Regular security audits** of user permissions
+- **RBAC bypass logging** - Monitor direct prisma client usage
+- **Extension validation** - Ensure RBAC guard is properly attached
