@@ -2,19 +2,30 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function ClientPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  // Redirect if not authenticated
+  // Handle redirects in useEffect to avoid render-time navigation
+  useEffect(() => {
+    if (status === 'loading') return // Still loading
+
+    if (!session) {
+      router.push('/login')
+      return
+    }
+  }, [session, status, router])
+
+  // Show loading while checking authentication
   if (status === 'loading') {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
+  // Show loading while redirecting
   if (!session) {
-    router.push('/login')
-    return null
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
   return (

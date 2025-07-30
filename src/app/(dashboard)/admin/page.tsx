@@ -2,25 +2,40 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import Link from 'next/link'
+import type { AuthSession } from '@/server/auth/types'
 
 export default function AdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  // Redirect if not authenticated or not admin
+  // Type guard for our custom session
+  const authSession = session as AuthSession | null
+
+  // Handle redirects in useEffect to avoid render-time navigation
+  useEffect(() => {
+    if (status === 'loading') return // Still loading
+
+    if (!authSession) {
+      router.push('/login')
+      return
+    }
+
+    if (authSession.user.role !== 'ADMIN') {
+      router.push('/client')
+      return
+    }
+  }, [authSession, status, router])
+
+  // Show loading while checking authentication
   if (status === 'loading') {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
-  if (!session) {
-    router.push('/login')
-    return null
-  }
-
-  if (session.user.role !== 'ADMIN') {
-    router.push('/client')
-    return null
+  // Show loading while redirecting
+  if (!authSession || authSession.user.role !== 'ADMIN') {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
   return (

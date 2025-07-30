@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc'
+import type { AuthSession } from '@/server/auth/types'
 
 export default function AdminUsersPage() {
   const { data: session, status } = useSession()
@@ -11,19 +12,32 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState<'ADMIN' | 'SE' | undefined>(undefined)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Redirect if not authenticated or not admin
+  // Type guard for our custom session
+  const authSession = session as AuthSession | null
+
+  // Handle redirects in useEffect to avoid render-time navigation
+  useEffect(() => {
+    if (status === 'loading') return // Still loading
+
+    if (!authSession) {
+      router.push('/login')
+      return
+    }
+
+    if (authSession.user.role !== 'ADMIN') {
+      router.push('/client')
+      return
+    }
+  }, [authSession, status, router])
+
+  // Show loading while checking authentication
   if (status === 'loading') {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
-  if (!session) {
-    router.push('/login')
-    return null
-  }
-
-  if (session.user.role !== 'ADMIN') {
-    router.push('/client')
-    return null
+  // Show loading while redirecting
+  if (!authSession || authSession.user.role !== 'ADMIN') {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
   // Fetch users with tRPC
@@ -31,6 +45,9 @@ export default function AdminUsersPage() {
     role: roleFilter,
     search: searchTerm || undefined,
   })
+
+  // Type guard for users data
+  const usersList = users || []
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,7 +148,7 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users?.map((user) => (
+                {usersList.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{user.name}</div>
@@ -182,7 +199,7 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
 
-            {!users || users.length === 0 ? (
+            {usersList.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No users found
               </div>
