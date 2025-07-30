@@ -26,6 +26,7 @@ repo‑root/
 │  │  └─ login/                # Auth pages kept out of dashboard chrome
 │  │
 │  ├─ components/              # Re‑usable dumb UI (Button, Card, TimelineStep)
+│  │  └─ ui/                  # shadcn/ui components (skeleton.tsx includes variants)
 │  ├─ features/                # Smart slices: UI + hooks + tRPC queries per domain
 │  │  ├─ clients/
 │  │  └─ users/
@@ -101,6 +102,7 @@ We implement **nested layouts** to create seamless single-page experiences for b
 - **Smooth UX**: Only page content re-renders, not the entire layout
 - **Code Splitting**: Each page loads its own data and components
 - **Active States**: Navigation automatically highlights current page
+- **Reusable Loading**: Skeleton components provide consistent loading experiences
 
 ## High‑Level Flow
 

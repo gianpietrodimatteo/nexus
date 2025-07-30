@@ -74,7 +74,8 @@ src/app/(dashboard)/
 | **Table** | `ui/table.tsx` | Structured data display | Used with TanStack Table in data-table.tsx |
 | **Badge** | `ui/badge.tsx` | Status indicators, tags | Multiple variants available |
 | **Avatar** | `ui/avatar.tsx` | User profile images | Fallback support |
-| **Skeleton** | `ui/skeleton.tsx` | Loading placeholders | Used in loading states |
+| **Skeleton** | `ui/skeleton.tsx` | Loading placeholders | Base skeleton + reusable skeleton variants |
+| **Progress** | `ui/progress.tsx` | Progress indicators | Shows completion percentage (0-100%) |
 
 ### ✅ Interactive Components
 
@@ -123,6 +124,43 @@ Our theme uses CSS variables for consistent theming:
 - Custom utilities in `lib/utils.ts` with `cn()` helper
 - Responsive design with mobile-first approach
 
+## Loading States Architecture
+
+### Two Types of Loading States
+
+#### 1. **Indeterminate Loading** (Structure Mimicking)
+Use **skeleton loading** when you don't know the exact progress but want to show the structure of content being loaded:
+
+```typescript
+import { TablePageSkeleton, DashboardSkeleton } from "@/components/ui/skeleton"
+
+// In loading.tsx files
+export default function UsersLoading() {
+  return <TablePageSkeleton hasFilters={true} hasAvatar={true} />
+}
+```
+
+#### 2. **Determinate Loading** (Progress Tracking)
+Use **Progress component** when you can track actual completion percentage:
+
+```typescript
+import { Progress } from "@/components/ui/progress"
+
+// For file uploads, data processing, etc.
+<Progress value={uploadProgress} className="w-full" />
+```
+
+### Available Skeleton Components
+
+| Component | Use Case | Props |
+|-----------|----------|--------|
+| `TablePageSkeleton` | Full table pages with headers and filters | `hasFilters`, `columns`, `rows`, `hasAvatar` |
+| `DashboardSkeleton` | Dashboard overview with cards and charts | None |
+| `PageHeaderSkeleton` | Page headers with title and action button | None |
+| `CardSkeleton` | Individual card components | None |
+| `TableHeaderSkeleton` | Just table headers | `columns` |
+| `TableRowSkeleton` | Just table rows | `rows`, `columns`, `hasAvatar` |
+
 ## Usage Patterns
 
 ### Import Pattern
@@ -130,6 +168,10 @@ Our theme uses CSS variables for consistent theming:
 // shadcn/ui components
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+
+// Skeleton components
+import { TablePageSkeleton } from "@/components/ui/skeleton"
 
 // Custom application components  
 import { AppSidebar } from "@/components/app-sidebar"
@@ -178,6 +220,9 @@ const isActive = (url: string) => {
 ```
 src/components/
 ├─ ui/                    # shadcn/ui components (managed by CLI)
+│  ├─ skeleton.tsx        # Base Skeleton + reusable skeleton variants
+│  ├─ progress.tsx        # Progress indicators for determinate loading
+│  └─ ...                 # Other shadcn/ui components
 ├─ app-sidebar.tsx        # App-specific layout components
 ├─ site-header.tsx        # Custom header component
 ├─ nav-*.tsx             # Navigation components
@@ -186,10 +231,32 @@ src/components/
 ```
 
 ### Best Practices
+
+#### Component Creation
 - **Composition over inheritance**: Combine simple components into complex ones
 - **Consistent prop patterns**: Follow shadcn conventions for props and variants
 - **TypeScript integration**: Leverage component prop types and variants
+
+#### Loading States
+- **Use appropriate loading type**: Skeleton for structure, Progress for tracked operations
+- **Reuse skeleton components**: Use pre-built skeletons instead of custom ones
+- **Match layout structure**: Skeleton should mirror actual content layout
 - **Performance**: Use loading states and Suspense boundaries for smooth UX
+
+#### Examples
+```typescript
+// ✅ Good: Use appropriate loading type
+const [uploadProgress, setUploadProgress] = useState(0)
+return <Progress value={uploadProgress} />
+
+// ✅ Good: Reuse skeleton components
+export default function ClientsLoading() {
+  return <TablePageSkeleton hasFilters={false} columns={5} />
+}
+
+// ❌ Avoid: Custom skeleton when reusable exists
+return <div className="h-4 bg-gray-200 animate-pulse" />
+```
 
 ## Future Expansion
 
