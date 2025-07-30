@@ -15,6 +15,14 @@ export default function AdminUsersPage() {
   // Type guard for our custom session
   const authSession = session as AuthSession | null
 
+  // Fetch users with tRPC - MUST be called before any early returns
+  const { data: users, isLoading, error, refetch } = trpc.admin.users.list.useQuery({
+    role: roleFilter,
+    search: searchTerm || undefined,
+  }, {
+    enabled: authSession?.user?.role === 'ADMIN', // Only run query if user is admin
+  })
+
   // Handle redirects in useEffect to avoid render-time navigation
   useEffect(() => {
     if (status === 'loading') return // Still loading
@@ -40,14 +48,8 @@ export default function AdminUsersPage() {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
-  // Fetch users with tRPC
-  const { data: users, isLoading, error, refetch } = trpc.admin.users.list.useQuery({
-    role: roleFilter,
-    search: searchTerm || undefined,
-  })
-
   // Type guard for users data
-  const usersList = users || []
+  const usersList: any[] = users || []
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -184,7 +186,7 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {user.role === 'SE' && user.assignedOrganizations?.length ? (
                         <div className="space-y-1">
-                          {user.assignedOrganizations.map((org) => (
+                          {user.assignedOrganizations.map((org: any) => (
                             <div key={org.id} className="bg-gray-100 px-2 py-1 rounded text-xs">
                               {org.name}
                             </div>
