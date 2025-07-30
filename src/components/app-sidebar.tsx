@@ -1,25 +1,20 @@
 "use client"
 
 import * as React from "react"
+import { useSession } from "next-auth/react"
 import {
-  IconCamera,
-  IconChartBar,
+  IconBrandAsana,
+  IconCreditCard,
   IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
+  IconExclamationCircle,
   IconInnerShadowTop,
-  IconListDetails,
+  IconMail,
   IconReport,
-  IconSearch,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react"
+import type { AuthSession } from "@/server/auth/types"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -33,124 +28,76 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
+const getNavData = (userRole?: string) => {
+  const baseNavItems = [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/admin",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
+      title: "Clients",
       url: "#",
       icon: IconUsers,
     },
-  ],
-  navClouds: [
     {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
+      title: "Billing",
       url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      icon: IconCreditCard,
     },
     {
-      title: "Proposal",
-      icon: IconFileDescription,
+      title: "Subscriptions",
       url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      icon: IconBrandAsana,
     },
     {
-      title: "Prompts",
-      icon: IconFileAi,
+      title: "Messaging",
       url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
+      icon: IconMail,
     },
     {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
+      title: "Reporting",
       url: "#",
       icon: IconReport,
     },
     {
-      name: "Word Assistant",
+      title: "Exceptions",
       url: "#",
-      icon: IconFileWord,
+      icon: IconExclamationCircle,
     },
-  ],
+  ]
+
+  // Only show Users tab for ADMIN users
+  if (userRole === "ADMIN") {
+    baseNavItems.splice(1, 0, {
+      title: "Users",
+      url: "/admin/users",
+      icon: IconUsers,
+    })
+  }
+
+  return {
+    user: {
+      name: "Admin User",
+      email: "admin@nexus.com",
+      avatar: "/avatars/admin.jpg",
+    },
+    navMain: baseNavItems,
+    navSecondary: [
+      {
+        title: "Settings",
+        url: "#",
+        icon: IconSettings,
+      },
+    ],
+  }
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: session } = useSession()
+  const authSession = session as AuthSession | null
+  const data = getNavData(authSession?.user?.role)
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -160,9 +107,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <a href="/admin">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <span className="text-base font-semibold">Nexus</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -170,7 +117,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
