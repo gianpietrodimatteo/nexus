@@ -1,13 +1,22 @@
 import { PrismaClient } from '@prisma/client'
 import { rbacGuard } from './middleware/rbacGuard'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+const prismaGlobal = globalThis as typeof globalThis & {
+  prisma?: PrismaClient
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+export const prisma: PrismaClient =
+  prismaGlobal.prisma ||
+  new PrismaClient({
+    log:
+      process.env.NODE_ENV === 'development'
+        ? ['query', 'error', 'warn']
+        : ['error'],
+  })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') {
+  prismaGlobal.prisma = prisma
+}
 
 /**
  * Creates an RBAC-aware Prisma client that automatically filters queries
