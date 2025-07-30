@@ -23,7 +23,13 @@ repo‑root/
 │  │  └─ users/
 │  │
 │  ├─ server/                  # Code that never ships to the browser
-│  │  ├─ trpc/                 # Routers & procedure helpers
+│  │  ├─ trpc/
+│  │  │  │   ├─ index.ts          # context + initTRPC
+│  │  │  │   ├─ routes/           # modular routers
+│  │  │  │   │   ├─ _helpers.ts   # role middlewares
+│  │  │  │   │   ├─ admin/…       # admin routers
+│  │  │  │   │   └─ client/…      # client routers
+│  │  │  │   └─ appRouter.ts      # merges all routers
 │  │  ├─ prisma/               # Prisma singleton + DB helpers
 │  │  └─ auth/                 # next‑auth config, RBAC utilities
 │  │
