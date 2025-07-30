@@ -15,7 +15,7 @@ repo‑root/
 │  │  │  │  ├─ users/          # /admin/users
 │  │  │  │  └─ clients/        # /admin/clients (+ deep routes)
 │  │  │  └─ client/            # /client … Client app
-│  │  └─ (auth)/login/         # Auth pages kept out of dashboard chrome
+│  │  └─ login/                # Auth pages kept out of dashboard chrome
 │  │
 │  ├─ components/              # Re‑usable dumb UI (Button, Card, TimelineStep)
 │  ├─ features/                # Smart slices: UI + hooks + tRPC queries per domain
