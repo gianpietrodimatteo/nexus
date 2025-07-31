@@ -11,6 +11,7 @@ import { UserFilters } from '@/components/user-filters'
 import { UserListTable } from '@/components/user-list-table'
 import { AddUserModal } from '@/components/add-user-modal'
 import { EditUserModal } from '@/components/edit-user-modal'
+import { DeleteUserDialog } from '@/components/delete-user-dialog'
 
 export default function AdminUsersPage() {
   const { data: session, status } = useSession()
@@ -19,6 +20,7 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
   const [editUserId, setEditUserId] = useState<string | null>(null)
+  const [deleteUser, setDeleteUser] = useState<{ id: string; name: string } | null>(null)
 
   // Type guard for our custom session
   const authSession = session as AuthSession | null
@@ -68,8 +70,10 @@ export default function AdminUsersPage() {
   }
 
   const handleDeleteUser = (userId: string) => {
-    // TODO: Implement delete user functionality
-    console.log('Delete user:', userId)
+    const user = usersList.find(u => u.id === userId)
+    if (user) {
+      setDeleteUser({ id: user.id, name: user.name })
+    }
   }
 
   const handleFilterChange = (value: 'all' | 'ADMIN' | 'SE') => {
@@ -117,6 +121,16 @@ export default function AdminUsersPage() {
         userId={editUserId}
         onSuccess={() => {
           refetch() // Refresh the users list after successful update
+        }}
+      />
+
+      <DeleteUserDialog
+        open={!!deleteUser}
+        onOpenChange={(open) => !open && setDeleteUser(null)}
+        userId={deleteUser?.id ?? null}
+        userName={deleteUser?.name ?? null}
+        onSuccess={() => {
+          refetch() // Refresh the users list after successful deletion
         }}
       />
     </div>

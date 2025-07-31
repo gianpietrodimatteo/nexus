@@ -109,6 +109,7 @@ src/app/(dashboard)/
 | **SectionCards** | Card | Dashboard overview cards |
 | **AddUserModal** | Dialog, Form, Select, Input, Checkbox | User creation modal with conditional fields |
 | **EditUserModal** | Dialog, Form, Select, Input, Checkbox, Skeleton | User editing modal with pre-populated data and loading states |
+| **DeleteUserDialog** | Dialog, Button | Confirmation dialog for user deletion with destructive action |
 
 ## Theme & Styling
 
