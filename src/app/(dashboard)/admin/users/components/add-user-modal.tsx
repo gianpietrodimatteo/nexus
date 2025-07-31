@@ -70,7 +70,7 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
       onOpenChange(false)
       onSuccess?.()
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create user:', error)
     },
   })
@@ -199,7 +199,7 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
                     <FormLabel>
                       {selectedRole === 'CLIENT' ? 'Organization' : 'Primary Organization (Optional)'}
                     </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select organization" />
@@ -292,12 +292,13 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
                                 >
                                   <FormControl>
                                     <Checkbox
-                                      checked={field.value?.includes(org.id)}
+                                      checked={field.value?.includes(org.id) || false}
                                       onCheckedChange={(checked) => {
+                                        const currentValue = field.value || []
                                         return checked
-                                          ? field.onChange([...field.value, org.id])
+                                          ? field.onChange([...currentValue, org.id])
                                           : field.onChange(
-                                              field.value?.filter(
+                                              currentValue.filter(
                                                 (value) => value !== org.id
                                               )
                                             )

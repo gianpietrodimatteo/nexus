@@ -145,7 +145,8 @@ export const adminUsersRouter = router({
         createData.phone = userData.phone
       }
       if (userData.organizationId) {
-        createData.organizationId = userData.organizationId
+        // Convert empty string to null for Prisma (foreign keys can't be empty strings)
+        createData.organizationId = userData.organizationId || null
       }
       if (userData.hourlyRateCost !== undefined) {
         createData.hourlyRateCost = userData.hourlyRateCost
@@ -240,7 +241,8 @@ export const adminUsersRouter = router({
         updateDataForPrisma.phone = updateData.phone
       }
       if (updateData.organizationId !== undefined) {
-        updateDataForPrisma.organizationId = updateData.organizationId
+        // Convert empty string to null for Prisma (foreign keys can't be empty strings)
+        updateDataForPrisma.organizationId = updateData.organizationId || null
       }
       if (updateData.hourlyRateCost !== undefined) {
         updateDataForPrisma.hourlyRateCost = updateData.hourlyRateCost

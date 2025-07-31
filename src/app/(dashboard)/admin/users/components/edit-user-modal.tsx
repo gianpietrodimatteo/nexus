@@ -53,7 +53,7 @@ export function EditUserModal({ open, onOpenChange, userId, onSuccess }: EditUse
       phone: '',
       hourlyRateCost: undefined,
       hourlyRateBillable: undefined,
-      organizationId: undefined,
+      organizationId: '',
       assignedOrganizationIds: [],
     },
   })
@@ -93,7 +93,7 @@ export function EditUserModal({ open, onOpenChange, userId, onSuccess }: EditUse
         phone: user.phone || '',
         hourlyRateCost: user.hourlyRateCost ? Number(user.hourlyRateCost) : undefined,
         hourlyRateBillable: user.hourlyRateBillable ? Number(user.hourlyRateBillable) : undefined,
-        organizationId: user.organizationId || undefined,
+        organizationId: user.organizationId || '',
         assignedOrganizationIds: user.assignedOrganizations?.map(org => org.id) || [],
       })
     }
@@ -224,7 +224,7 @@ export function EditUserModal({ open, onOpenChange, userId, onSuccess }: EditUse
                         {user?.role === 'CLIENT' ? 'Organization' : 'Primary Organization (Optional)'}
                       </FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)} 
+                        onValueChange={(value) => field.onChange(value === 'none' ? '' : value)} 
                         value={field.value || 'none'}
                       >
                         <FormControl>

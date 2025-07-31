@@ -28,7 +28,7 @@ export const createUserSchema = z.object({
   assignedOrganizationIds: z.array(z.string()).optional(),
   
   // Organization assignment (optional for admins)
-  organizationId: z.string().optional(),
+  organizationId: z.string().nullish(),
 }).refine((data) => {
   // SE users must have hourly rates
   if (data.role === 'SE') {
@@ -55,7 +55,7 @@ export const updateUserSchema = z.object({
   assignedOrganizationIds: z.array(z.string()).optional(),
   
   // Organization assignment
-  organizationId: z.string().optional(),
+  organizationId: z.string().nullish(),
 }).refine((data) => {
   // If updating hourly rates for SE, both should be provided
   if (data.hourlyRateCost || data.hourlyRateBillable) {
