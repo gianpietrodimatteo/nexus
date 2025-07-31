@@ -29,7 +29,7 @@ const DEFAULT_ENGINEERS: SupportEngineer[] = [
 ]
 
 export function AssignedSupportEngineers({ 
-  engineers = DEFAULT_ENGINEERS, 
+  engineers = [], 
   clientId 
 }: AssignedSupportEngineersProps) {
   const getInitials = (name: string) => {
@@ -44,26 +44,32 @@ export function AssignedSupportEngineers({
     <div className="space-y-6">
       <h3 className="text-2xl font-semibold text-[#1F2937]">Assigned Support Engineers</h3>
       
-      <div className="flex gap-4">
-        {engineers.map((engineer) => (
-          <Card key={engineer.id} className="p-4 flex items-center gap-4 border border-[#E9E7E4] bg-white">
-            <Avatar className="h-12 w-12">
-              <AvatarFallback className="text-sm bg-gray-100">
-                {getInitials(engineer.name)}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex flex-col">
-              <div className="font-medium text-[#1F2937] text-base">
-                {engineer.name}
+      {engineers.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-[#6B7280] text-sm">No support engineers assigned to this client</div>
+        </div>
+      ) : (
+        <div className="flex gap-4">
+          {engineers.map((engineer) => (
+            <Card key={engineer.id} className="p-4 flex items-center gap-4 border border-[#E9E7E4] bg-white">
+              <Avatar className="h-12 w-12">
+                <AvatarFallback className="text-sm bg-gray-100">
+                  {getInitials(engineer.name)}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex flex-col">
+                <div className="font-medium text-[#1F2937] text-base">
+                  {engineer.name}
+                </div>
+                <div className="text-sm text-[#757575]">
+                  {engineer.role}
+                </div>
               </div>
-              <div className="text-sm text-[#757575]">
-                {engineer.role}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

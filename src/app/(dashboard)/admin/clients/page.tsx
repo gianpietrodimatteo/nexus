@@ -11,21 +11,36 @@ import { ClientUsersList } from './components/client-users-list'
 import { AssignedSupportEngineers } from './components/assigned-support-engineers'
 import { DocumentLinks } from './components/document-links'
 import { PipelineProgress } from './components/pipeline-progress'
+import { ClientSelector } from './components/client-selector'
 
 export default function AdminClientsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('')
 
   // Type guard for our custom session
   const authSession = session as AuthSession | null
 
-  // Fetch client users with tRPC
-  const { data: clientUsers, isLoading, error } = trpc.users.list.useQuery({
-    role: 'CLIENT' // Filter to only show CLIENT users
-  }, {
-    enabled: authSession?.user?.role === 'ADMIN', // Only run query if user is admin
-  })
+  // Fetch organization-specific data only when an organization is selected
+  const { data: organization, isLoading: orgLoading } = trpc.clients.getOrganization.useQuery(
+    { organizationId: selectedOrganizationId },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
+
+  const { data: clientUsers, isLoading: usersLoading } = trpc.clients.getClientUsers.useQuery(
+    { organizationId: selectedOrganizationId },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
+
+  const { data: documentLinks, isLoading: docsLoading } = trpc.clients.getDocumentLinks.useQuery(
+    { organizationId: selectedOrganizationId },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
+
+  const { data: pipelineData, isLoading: pipelineLoading } = trpc.clients.getPipelineProgress.useQuery(
+    { organizationId: selectedOrganizationId },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
 
   // Handle redirects in useEffect to avoid render-time navigation
   useEffect(() => {
@@ -52,57 +67,126 @@ export default function AdminClientsPage() {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
-  // Type guard for client users data
-  const clientUsersList: any[] = clientUsers || []
+  // Convert pipeline data to component format
+  const formatPipelinePhases = () => {
+    if (!pipelineData) return []
+
+    const allPhases = [
+      'DISCOVERY_SURVEY',
+      'DISCOVERY_DEEP_DIVE', 
+      'ADA_PROPOSAL_SENT',
+      'ADA_PROPOSAL_REVIEW',
+      'ADA_CONTRACT_SENT',
+      'ADA_CONTRACT_SIGNED',
+      'CREDENTIALS_COLLECTED',
+      'FACTORY_BUILD',
+      'TEST_PLAN_GENERATED',
+      'TESTING_STARTED',
+      'PRODUCTION_DEPLOY'
+    ]
+
+    const phaseNames = {
+      'DISCOVERY_SURVEY': 'Discovery: Initial Survey',
+      'DISCOVERY_DEEP_DIVE': 'Discovery: Process deep dive',
+      'ADA_PROPOSAL_SENT': 'ADA Proposal Sent',
+      'ADA_PROPOSAL_REVIEW': 'ADA Proposal Review done',
+      'ADA_CONTRACT_SENT': 'ADA Contract Sent',
+      'ADA_CONTRACT_SIGNED': 'ADA Contract Signed',
+      'CREDENTIALS_COLLECTED': 'Credentials collected',
+      'FACTORY_BUILD': 'Factory build initiated',
+      'TEST_PLAN_GENERATED': 'Test plan generated',
+      'TESTING_STARTED': 'Testing started',
+      'PRODUCTION_DEPLOY': 'Production deploy'
+    }
+
+    return allPhases.map((phase, index) => {
+      const completedPhase = pipelineData.completedPhases.find(p => p.phase === phase)
+      return {
+        id: index + 1,
+        name: phaseNames[phase as keyof typeof phaseNames],
+        isCompleted: !!completedPhase,
+        completedAt: completedPhase?.completedAt
+      }
+    })
+  }
+
+  // Convert document links to component format
+  const formatDocumentLinks = () => {
+    if (!documentLinks) return undefined
+
+    const linksByType = documentLinks.reduce((acc, link) => {
+      acc[link.type] = link.url
+      return acc
+    }, {} as Record<string, string>)
+
+    return {
+      surveyQuestionsLink: linksByType.SURVEY_QUESTIONS || '',
+      surveyResultsLink: linksByType.SURVEY_RESULTS || '',
+      processDocumentationLink: linksByType.PROCESS_DOC || '',
+      adaProposalLink: linksByType.ADA_PROPOSAL || '',
+      contractLink: linksByType.CONTRACT || '',
+      factoryMarkdownLink: linksByType.FACTORY_MARKDOWN || '',
+      testPlanLink: linksByType.TEST_PLAN || ''
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8 py-8 px-8">
-      {/* Assigned Support Engineers Section */}
-      <AssignedSupportEngineers clientId="current-client" />
+      <PageHeader title="Client Management" />
 
-      {/* Client Users and Document Links Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-        {/* Client Users Section */}
-        <Card className="shadow-sm border border-[#E9E7E4]">
-          <div className="p-6">
-            <ClientUsersList
-              clientUsers={clientUsersList}
-              isLoading={isLoading}
-              error={error as { message?: string } | null}
+      {/* Client Selector */}
+      <ClientSelector 
+        selectedClientId={selectedOrganizationId}
+        onClientSelect={setSelectedOrganizationId}
+      />
+
+      {/* Show content only when organization is selected */}
+      {selectedOrganizationId && (
+        <>
+          {/* Assigned Support Engineers Section */}
+          <AssignedSupportEngineers 
+            engineers={organization?.assignedSEs?.map(se => ({
+              id: se.id,
+              name: se.name,
+              role: se.role === 'SE' ? 'Support Engineer' : se.role
+            })) || []}
+            clientId={selectedOrganizationId}
+          />
+
+          {/* Client Users and Document Links Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
+            {/* Client Users Section */}
+            <Card className="shadow-sm border border-[#E9E7E4]">
+              <div className="p-6">
+                <ClientUsersList
+                  clientUsers={clientUsers || []}
+                  isLoading={usersLoading}
+                  error={null}
+                />
+              </div>
+            </Card>
+
+            {/* Document Links Section */}
+            <DocumentLinks 
+              initialLinks={formatDocumentLinks()}
+              onLinksChange={(links) => {
+                // TODO: Implement save functionality
+                console.log('Document links updated:', links)
+              }}
             />
           </div>
-        </Card>
 
-        {/* Document Links Section */}
-        <DocumentLinks 
-          onLinksChange={(links) => {
-            // TODO: Implement save functionality
-            console.log('Document links updated:', links)
-          }}
-        />
-      </div>
-
-      {/* Pipeline Progress Section */}
-      <PipelineProgress 
-        clientId="current-client"
-        phases={[
-          { id: 1, name: "Discovery: Initial Survey", isCompleted: true, completedAt: "2025-01-15T10:00:00Z" },
-          { id: 2, name: "Discovery: Process deep dive", isCompleted: true, completedAt: "2025-01-20T14:30:00Z" },
-          { id: 3, name: "ADA Proposal Sent", isCompleted: true, completedAt: "2025-01-25T09:15:00Z" },
-          { id: 4, name: "ADA Proposal Review done", isCompleted: false },
-          { id: 5, name: "ADA Contract Sent", isCompleted: false },
-          { id: 6, name: "ADA Contract Signed", isCompleted: false },
-          { id: 7, name: "Credentials collected", isCompleted: false },
-          { id: 8, name: "Factory build initiated", isCompleted: false },
-          { id: 9, name: "Test plan generated", isCompleted: false },
-          { id: 10, name: "Testing started", isCompleted: false },
-          { id: 11, name: "Production deploy", isCompleted: false }
-        ]}
-        onMarkComplete={(phaseId) => {
-          // TODO: Implement mark complete functionality
-          console.log('Mark phase complete:', phaseId)
-        }}
-      />
+          {/* Pipeline Progress Section */}
+          <PipelineProgress 
+            clientId={selectedOrganizationId}
+            phases={formatPipelinePhases()}
+            onMarkComplete={(phaseId) => {
+              // TODO: Implement mark complete functionality
+              console.log('Mark phase complete:', phaseId)
+            }}
+          />
+        </>
+      )}
     </div>
   )
 }
