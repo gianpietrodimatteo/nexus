@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc'
 import type { AuthSession } from '@/server/auth/types'
 import { Card } from '@/components/ui/card'
-import { PageHeader } from '@/components/page-header'
+import { Button } from '@/components/ui/button'
 import { UserFilters } from '@/components/user-filters'
 import { UserListTable } from '@/components/user-list-table'
 import { AddUserModal } from './components/add-user-modal'
 import { EditUserModal } from './components/edit-user-modal'
 import { DeleteUserDialog } from './components/delete-user-dialog'
+import { useAdminHeader } from '@/components/admin-header-context'
 
 export default function AdminUsersPage() {
   const { data: session, status } = useSession()
@@ -21,6 +22,7 @@ export default function AdminUsersPage() {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
   const [editUserId, setEditUserId] = useState<string | null>(null)
   const [deleteUser, setDeleteUser] = useState<{ id: string; name: string } | null>(null)
+  const { setHeaderContent } = useAdminHeader()
 
   // Type guard for our custom session
   const authSession = session as AuthSession | null
@@ -47,6 +49,25 @@ export default function AdminUsersPage() {
       return
     }
   }, [authSession, status, router])
+
+  // Set header content
+  useEffect(() => {
+    if (authSession?.user?.role === 'ADMIN') {
+      setHeaderContent({
+        title: 'User Manager',
+        actions: (
+          <Button onClick={handleAddUser}>
+            Add New User
+          </Button>
+        )
+      })
+    }
+
+    // Cleanup function to reset header when component unmounts
+    return () => {
+      setHeaderContent(null)
+    }
+  }, [authSession, setHeaderContent])
 
   // Show loading while checking authentication
   if (status === 'loading') {
@@ -81,14 +102,8 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <PageHeader 
-        title="Manage Users" 
-        actionLabel="Add New User" 
-        onActionClick={handleAddUser}
-      />
-
-      <div className="mx-4 lg:mx-6">
+    <div className="flex flex-col">
+      <div className="px-8 py-8">
         <Card className="shadow-sm border border-gray-100">
           <UserFilters 
             value={roleFilter} 

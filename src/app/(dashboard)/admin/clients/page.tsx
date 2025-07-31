@@ -6,17 +6,20 @@ import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc'
 import type { AuthSession } from '@/server/auth/types'
 import { Card } from '@/components/ui/card'
-import { PageHeader } from '@/components/page-header'
+import { Button } from '@/components/ui/button'
 import { ClientUsersList } from './components/client-users-list'
 import { AssignedSupportEngineers } from './components/assigned-support-engineers'
 import { DocumentLinks } from './components/document-links'
 import { PipelineProgress } from './components/pipeline-progress'
 import { ClientSelector } from './components/client-selector'
+import { useAdminHeader } from '@/components/admin-header-context'
 
 export default function AdminClientsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<'overview' | 'workflows'>('overview')
+  const { setHeaderContent } = useAdminHeader()
 
   // Type guard for our custom session
   const authSession = session as AuthSession | null
@@ -56,6 +59,54 @@ export default function AdminClientsPage() {
       return
     }
   }, [authSession, status, router])
+
+  // Set header content
+  useEffect(() => {
+    if (authSession?.user?.role === 'ADMIN') {
+      setHeaderContent({
+        title: 'Client Manager',
+        navigation: (
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={activeTab === 'overview' ? 'default' : 'ghost'}
+              size="sm"
+              className={`${
+                activeTab === 'overview' 
+                  ? 'bg-white shadow-sm text-gray-900' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              onClick={() => setActiveTab('overview')}
+            >
+              Overview
+            </Button>
+            <Button
+              variant={activeTab === 'workflows' ? 'default' : 'ghost'}
+              size="sm"
+              className={`${
+                activeTab === 'workflows' 
+                  ? 'bg-white shadow-sm text-gray-900' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              onClick={() => setActiveTab('workflows')}
+            >
+              Client Workflows
+            </Button>
+          </div>
+        ),
+        actions: (
+          <ClientSelector 
+            selectedClientId={selectedOrganizationId}
+            onClientSelect={setSelectedOrganizationId}
+          />
+        )
+      })
+    }
+
+    // Cleanup function to reset header when component unmounts
+    return () => {
+      setHeaderContent(null)
+    }
+  }, [authSession, activeTab, selectedOrganizationId, setHeaderContent])
 
   // Show loading while checking authentication
   if (status === 'loading') {
@@ -130,63 +181,81 @@ export default function AdminClientsPage() {
     }
   }
 
-  return (
-    <div className="flex flex-col gap-8 py-8 px-8">
-      <PageHeader title="Client Management" />
+  // Render content based on active tab
+  const renderTabContent = () => {
+    if (!selectedOrganizationId) {
+      return (
+        <div className="text-center py-16">
+          <div className="text-[#6B7280] text-lg">Select a client organization to view details</div>
+          <div className="text-[#9CA3AF] text-sm mt-2">Choose from the dropdown in the header to get started</div>
+        </div>
+      )
+    }
 
-      {/* Client Selector */}
-      <ClientSelector 
-        selectedClientId={selectedOrganizationId}
-        onClientSelect={setSelectedOrganizationId}
-      />
+    if (activeTab === 'workflows') {
+      return (
+        <div className="text-center py-16">
+          <div className="text-[#6B7280] text-lg">Client Workflows</div>
+          <div className="text-[#9CA3AF] text-sm mt-2">Workflow management coming soon</div>
+        </div>
+      )
+    }
 
-      {/* Show content only when organization is selected */}
-      {selectedOrganizationId && (
-        <>
-          {/* Assigned Support Engineers Section */}
-          <AssignedSupportEngineers 
-            engineers={organization?.assignedSEs?.map(se => ({
-              id: se.id,
-              name: se.name,
-              role: se.role === 'SE' ? 'Support Engineer' : se.role
-            })) || []}
-            clientId={selectedOrganizationId}
-          />
+    // Overview tab content
+    return (
+      <>
+        {/* Assigned Support Engineers Section */}
+        <AssignedSupportEngineers 
+          engineers={organization?.assignedSEs?.map(se => ({
+            id: se.id,
+            name: se.name,
+            role: se.role === 'SE' ? 'Support Engineer' : se.role
+          })) || []}
+          clientId={selectedOrganizationId}
+        />
 
-          {/* Client Users and Document Links Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-            {/* Client Users Section */}
-            <Card className="shadow-sm border border-[#E9E7E4]">
-              <div className="p-6">
-                <ClientUsersList
-                  clientUsers={clientUsers || []}
-                  isLoading={usersLoading}
-                  error={null}
-                />
-              </div>
-            </Card>
+        {/* Client Users and Document Links Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
+          {/* Client Users Section */}
+          <Card className="shadow-sm border border-[#E9E7E4]">
+            <div className="p-6">
+              <ClientUsersList
+                clientUsers={clientUsers || []}
+                isLoading={usersLoading}
+                error={null}
+              />
+            </div>
+          </Card>
 
-            {/* Document Links Section */}
-            <DocumentLinks 
-              initialLinks={formatDocumentLinks()}
-              onLinksChange={(links) => {
-                // TODO: Implement save functionality
-                console.log('Document links updated:', links)
-              }}
-            />
-          </div>
-
-          {/* Pipeline Progress Section */}
-          <PipelineProgress 
-            clientId={selectedOrganizationId}
-            phases={formatPipelinePhases()}
-            onMarkComplete={(phaseId) => {
-              // TODO: Implement mark complete functionality
-              console.log('Mark phase complete:', phaseId)
+          {/* Document Links Section */}
+          <DocumentLinks 
+            initialLinks={formatDocumentLinks()}
+            onLinksChange={(links) => {
+              // TODO: Implement save functionality
+              console.log('Document links updated:', links)
             }}
           />
-        </>
-      )}
+        </div>
+
+        {/* Pipeline Progress Section */}
+        <PipelineProgress 
+          clientId={selectedOrganizationId}
+          phases={formatPipelinePhases()}
+          onMarkComplete={(phaseId) => {
+            // TODO: Implement mark complete functionality
+            console.log('Mark phase complete:', phaseId)
+          }}
+        />
+      </>
+    )
+  }
+
+  return (
+    <div className="flex flex-col">
+      {/* Main Content */}
+      <div className="px-8 py-8 space-y-8">
+        {renderTabContent()}
+      </div>
     </div>
   )
 }

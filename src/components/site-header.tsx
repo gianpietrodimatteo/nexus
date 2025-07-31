@@ -19,25 +19,44 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAdminHeader } from "@/components/admin-header-context"
 import type { AuthSession } from "@/server/auth/types"
 
-interface SiteHeaderProps {
-  title?: string
-}
-
-export function SiteHeader({ title = "Dashboard" }: SiteHeaderProps) {
+export function SiteHeader() {
   const { data: session } = useSession()
   const authSession = session as AuthSession | null
+  const { headerContent } = useAdminHeader()
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-2 border-b bg-white shadow-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-[72px]">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+    <header className="flex min-h-[72px] shrink-0 items-center gap-2 border-b bg-white shadow-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:min-h-[72px]">
+      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 py-4">
         <SidebarTrigger className="-ml-1" />
         <Separator
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <h1 className="text-xl font-normal text-[#141417]">{title}</h1>
+        
+        {headerContent ? (
+          <div className="flex flex-1 items-center justify-between gap-6">
+            <h1 className="text-xl font-semibold text-[#141417]">{headerContent.title}</h1>
+            
+            <div className="flex items-center gap-6">
+              {headerContent.navigation && (
+                <div className="flex items-center">
+                  {headerContent.navigation}
+                </div>
+              )}
+              
+              {headerContent.actions && (
+                <div className="flex items-center">
+                  {headerContent.actions}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <h1 className="text-xl font-normal text-[#141417]">Dashboard</h1>
+        )}
         
         <div className="ml-auto flex items-center gap-3">
           {/* Notification Button */}
