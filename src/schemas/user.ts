@@ -15,7 +15,7 @@ const baseUserSchema = z.object({
 export const userRoleFilterSchema = z.enum(['ADMIN', 'SE', 'CLIENT']).optional()
 
 /**
- * Schema for creating a new user
+ * Schema for creating a new user (supports all roles: ADMIN, SE, CLIENT)
  */
 export const createUserSchema = z.object({
   ...baseUserSchema.shape,
@@ -27,21 +27,30 @@ export const createUserSchema = z.object({
   hourlyRateBillable: z.number().positive().optional(),
   assignedOrganizationIds: z.array(z.string()).optional(),
   
-  // Organization assignment (optional for admins)
+  // CLIENT-specific fields (conditional)
+  billingAccess: z.boolean().optional(),
+  adminAccess: z.boolean().optional(),
+  notificationPreferences: z.any().optional(),
+  
+  // Organization assignment (optional for admins, required for clients)
   organizationId: z.string().nullish(),
 }).refine((data) => {
   // SE users must have hourly rates
   if (data.role === 'SE') {
     return data.hourlyRateCost && data.hourlyRateBillable
   }
+  // CLIENT users must have an organization
+  if (data.role === 'CLIENT') {
+    return !!data.organizationId
+  }
   return true
 }, {
-  message: 'SE users must have both cost and billable hourly rates',
-  path: ['hourlyRateCost']
+  message: 'SE users must have both hourly rates, CLIENT users must have an organization',
+  path: ['role']
 })
 
 /**
- * Schema for updating an existing user
+ * Schema for updating an existing user (supports all roles: ADMIN, SE, CLIENT)
  */
 export const updateUserSchema = z.object({
   id: z.string(),
@@ -53,6 +62,11 @@ export const updateUserSchema = z.object({
   hourlyRateCost: z.number().positive().optional(),
   hourlyRateBillable: z.number().positive().optional(),
   assignedOrganizationIds: z.array(z.string()).optional(),
+  
+  // CLIENT-specific fields (conditional)
+  billingAccess: z.boolean().optional(),
+  adminAccess: z.boolean().optional(),
+  notificationPreferences: z.any().optional(),
   
   // Organization assignment
   organizationId: z.string().nullish(),
@@ -75,12 +89,15 @@ export const getUserByIdSchema = z.object({
 })
 
 /**
- * Schema for user list filtering
+ * Schema for user list filtering (supports all user types)
  */
 export const userListFilterSchema = z.object({
   role: userRoleFilterSchema,
   organizationId: z.string().optional(),
   search: z.string().optional(),
+  // CLIENT-specific filters
+  billingAccess: z.boolean().optional(),
+  adminAccess: z.boolean().optional(),
 })
 
 /**

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { trpc } from '@/lib/trpc'
-import { updateUserSchema, type UpdateUserInput } from '@/schemas/user'
+import { updateUserSchema } from '@/schemas/user'
 import {
   Dialog,
   DialogContent,
@@ -44,7 +44,7 @@ interface EditUserModalProps {
 export function EditUserModal({ open, onOpenChange, userId, onSuccess }: EditUserModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const form = useForm<UpdateUserInput>({
+  const form = useForm({
     resolver: zodResolver(updateUserSchema),
     defaultValues: {
       id: '',
@@ -97,9 +97,9 @@ export function EditUserModal({ open, onOpenChange, userId, onSuccess }: EditUse
         assignedOrganizationIds: user.assignedOrganizations?.map(org => org.id) || [],
       })
     }
-  }, [user, open, form])
+  }, [user, open])
 
-  const onSubmit = async (data: UpdateUserInput) => {
+  const onSubmit = async (data: any) => {
     setIsSubmitting(true)
     try {
       await updateUserMutation.mutateAsync(data)

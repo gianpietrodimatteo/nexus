@@ -11,17 +11,17 @@ import {
 import bcrypt from 'bcryptjs'
 
 /**
- * Admin users procedures for managing ADMIN and SE users.
+ * Users procedures for managing all user types (ADMIN, SE, CLIENT).
  * All procedures require ADMIN role.
  */
-export const adminUsersRouter = router({
+export const usersRouter = router({
   /**
    * List users with optional filtering by role, organization, and search
    */
   list: isAdmin
     .input(userListFilterSchema)
     .query(async ({ input, ctx }) => {
-      const { role, organizationId, search } = input
+      const { role, organizationId, search, billingAccess, adminAccess } = input
 
       const where: any = {}
       
@@ -33,6 +33,15 @@ export const adminUsersRouter = router({
       // Filter by organization if specified
       if (organizationId) {
         where.organizationId = organizationId
+      }
+      
+      // Filter by CLIENT-specific fields if specified
+      if (billingAccess !== undefined) {
+        where.billingAccess = billingAccess
+      }
+      
+      if (adminAccess !== undefined) {
+        where.adminAccess = adminAccess
       }
       
       // Search by name or email if specified
@@ -106,7 +115,7 @@ export const adminUsersRouter = router({
     }),
 
   /**
-   * Create a new user (ADMIN or SE)
+   * Create a new user (ADMIN, SE, or CLIENT)
    */
   create: isAdmin
     .input(createUserSchema)
@@ -148,11 +157,24 @@ export const adminUsersRouter = router({
         // Convert empty string to null for Prisma (foreign keys can't be empty strings)
         createData.organizationId = userData.organizationId || null
       }
+      
+      // SE-specific fields
       if (userData.hourlyRateCost !== undefined) {
         createData.hourlyRateCost = userData.hourlyRateCost
       }
       if (userData.hourlyRateBillable !== undefined) {
         createData.hourlyRateBillable = userData.hourlyRateBillable
+      }
+      
+      // CLIENT-specific fields
+      if (userData.billingAccess !== undefined) {
+        createData.billingAccess = userData.billingAccess
+      }
+      if (userData.adminAccess !== undefined) {
+        createData.adminAccess = userData.adminAccess
+      }
+      if (userData.notificationPreferences !== undefined) {
+        createData.notificationPreferences = userData.notificationPreferences
       }
 
       // Add organization assignments for SE users
@@ -244,11 +266,24 @@ export const adminUsersRouter = router({
         // Convert empty string to null for Prisma (foreign keys can't be empty strings)
         updateDataForPrisma.organizationId = updateData.organizationId || null
       }
+      
+      // SE-specific fields
       if (updateData.hourlyRateCost !== undefined) {
         updateDataForPrisma.hourlyRateCost = updateData.hourlyRateCost
       }
       if (updateData.hourlyRateBillable !== undefined) {
         updateDataForPrisma.hourlyRateBillable = updateData.hourlyRateBillable
+      }
+      
+      // CLIENT-specific fields
+      if (updateData.billingAccess !== undefined) {
+        updateDataForPrisma.billingAccess = updateData.billingAccess
+      }
+      if (updateData.adminAccess !== undefined) {
+        updateDataForPrisma.adminAccess = updateData.adminAccess
+      }
+      if (updateData.notificationPreferences !== undefined) {
+        updateDataForPrisma.notificationPreferences = updateData.notificationPreferences
       }
 
       // Handle organization assignments for SE users

@@ -6,8 +6,7 @@ import { authRouter } from './routes/auth.router'
 import { billingRouter } from './routes/billing.router'
 import { adminDashboardRouter } from './routes/dashboard.router'
 import { adminClientsRouter } from './routes/clients.router'
-import { adminUsersRouter } from './routes/users.router'
-import { adminClientUsersRouter } from './routes/client-users.router'
+import { usersRouter } from './routes/users.router'
 import { adminOrganizationsRouter } from './routes/organizations.router'
 
 /**
@@ -17,9 +16,8 @@ import { adminOrganizationsRouter } from './routes/organizations.router'
  */
 export const appRouter = router({
   auth: authRouter,
-  users: adminUsersRouter,
+  users: usersRouter,
   clients: adminClientsRouter,
-  clientUsers: adminClientUsersRouter,
   organizations: adminOrganizationsRouter,
   dashboard: adminDashboardRouter,
   billing: billingRouter,
