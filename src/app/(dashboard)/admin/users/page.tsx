@@ -26,7 +26,7 @@ export default function AdminUsersPage() {
   const authSession = session as AuthSession | null
 
   // Fetch users with tRPC - MUST be called before any early returns
-  const { data: users, isLoading, error, refetch } = trpc.admin.users.list.useQuery({
+  const { data: users, isLoading, error, refetch } = trpc.users.list.useQuery({
     role: roleFilter === 'all' ? undefined : roleFilter,
     search: searchTerm || undefined,
   }, {

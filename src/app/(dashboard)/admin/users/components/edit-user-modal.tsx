@@ -59,7 +59,7 @@ export function EditUserModal({ open, onOpenChange, userId, onSuccess }: EditUse
   })
 
   // Fetch user data when userId changes
-  const { data: user, isLoading: isLoadingUser } = trpc.admin.users.get.useQuery(
+  const { data: user, isLoading: isLoadingUser } = trpc.users.get.useQuery(
     { id: userId! },
     { 
       enabled: !!userId && open,
@@ -68,12 +68,12 @@ export function EditUserModal({ open, onOpenChange, userId, onSuccess }: EditUse
   )
 
   // Fetch organizations for dropdowns
-  const { data: organizations } = trpc.admin.organizations.list.useQuery(undefined, {
+  const { data: organizations } = trpc.organizations.list.useQuery(undefined, {
     enabled: open
   })
 
   // Update user mutation
-  const updateUserMutation = trpc.admin.users.update.useMutation({
+  const updateUserMutation = trpc.users.update.useMutation({
     onSuccess: () => {
       onOpenChange(false)
       onSuccess?.()

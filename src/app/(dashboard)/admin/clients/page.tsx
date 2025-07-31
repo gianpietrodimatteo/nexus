@@ -18,7 +18,7 @@ export default function AdminClientsPage() {
   const authSession = session as AuthSession | null
 
   // Fetch client users with tRPC
-  const { data: clientUsers, isLoading, error } = trpc.admin.clientUsers.list.useQuery({}, {
+  const { data: clientUsers, isLoading, error } = trpc.clientUsers.list.useQuery({}, {
     enabled: authSession?.user?.role === 'ADMIN', // Only run query if user is admin
   })
 

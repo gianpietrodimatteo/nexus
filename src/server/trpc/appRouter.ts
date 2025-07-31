@@ -1,7 +1,7 @@
 import { router } from './index'
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 
-// Sub-routers
+// Domain-based routers
 import { authRouter } from './routes/auth.router'
 import { billingRouter } from './routes/billing.router'
 import { adminDashboardRouter } from './routes/dashboard.router'
@@ -9,26 +9,19 @@ import { adminClientsRouter } from './routes/clients.router'
 import { adminUsersRouter } from './routes/users.router'
 import { adminClientUsersRouter } from './routes/client-users.router'
 import { adminOrganizationsRouter } from './routes/organizations.router'
-import { clientDashboardRouter } from './routes/client/dashboard.router'
-import { clientWorkflowsRouter } from './routes/client/workflows.router'
 
 /**
- * Main application router that composes all feature routers.
+ * Main application router that composes all domain routers.
  * This is the single entry point for all tRPC procedures.
+ * Organized by business domain rather than user role.
  */
 export const appRouter = router({
   auth: authRouter,
-  admin: router({
-    dashboard: adminDashboardRouter,
-    clients: adminClientsRouter,
-    users: adminUsersRouter,
-    clientUsers: adminClientUsersRouter,
-    organizations: adminOrganizationsRouter,
-  }),
-  client: router({
-    dashboard: clientDashboardRouter,
-    workflows: clientWorkflowsRouter,
-  }),
+  users: adminUsersRouter,
+  clients: adminClientsRouter,
+  clientUsers: adminClientUsersRouter,
+  organizations: adminOrganizationsRouter,
+  dashboard: adminDashboardRouter,
   billing: billingRouter,
 })
 

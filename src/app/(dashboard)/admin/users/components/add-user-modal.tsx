@@ -61,10 +61,10 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
   const selectedRole = form.watch('role')
 
   // Fetch organizations for dropdowns
-  const { data: organizations } = trpc.admin.organizations.list.useQuery()
+  const { data: organizations } = trpc.organizations.list.useQuery()
 
   // Create user mutation
-  const createUserMutation = trpc.admin.users.create.useMutation({
+  const createUserMutation = trpc.users.create.useMutation({
     onSuccess: () => {
       form.reset()
       onOpenChange(false)

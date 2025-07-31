@@ -24,7 +24,7 @@ export function DeleteUserDialog({ open, onOpenChange, userId, userName, onSucce
   const [isDeleting, setIsDeleting] = useState(false)
 
   // Delete user mutation
-  const deleteUserMutation = trpc.admin.users.delete.useMutation({
+  const deleteUserMutation = trpc.users.delete.useMutation({
     onSuccess: () => {
       onOpenChange(false)
       onSuccess?.()
