@@ -4,7 +4,7 @@ This document outlines the shadcn/ui components used in the Nexus platform and o
 
 ## Overview
 
-We use **shadcn/ui** as our component library foundation, providing consistent, accessible, and customizable UI components. All components are located in `src/components/ui/` and follow the shadcn/ui patterns with our custom theme and styling.
+We use **shadcn/ui** as our component library foundation. All basic components are located in `src/components/ui/` and composite ones (called blocks) located in `src/components/` and can be customized for our purposes.
 
 ## Single-Page Application Architecture
 
