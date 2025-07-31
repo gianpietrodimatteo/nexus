@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { trpc } from "@/lib/trpc"
 
@@ -8,6 +9,13 @@ interface ClientSelectorProps {
 
 export function ClientSelector({ selectedClientId, onClientSelect }: ClientSelectorProps) {
   const { data: organizations, isLoading } = trpc.organizations.list.useQuery()
+
+  // Auto-select the first organization when data loads and no client is currently selected
+  useEffect(() => {
+    if (organizations && organizations.length > 0 && !selectedClientId) {
+      onClientSelect(organizations[0].id)
+    }
+  }, [organizations, selectedClientId, onClientSelect])
 
   if (isLoading) {
     return (

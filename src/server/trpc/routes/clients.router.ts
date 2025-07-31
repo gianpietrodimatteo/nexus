@@ -1,6 +1,6 @@
-import { z } from 'zod'
 import { router } from '../index'
 import { isAdmin } from './_helpers'
+import { organizationIdSchema } from '@/schemas/common'
 
 /**
  * Admin clients procedures for managing client organizations and their data.
@@ -11,7 +11,7 @@ export const adminClientsRouter = router({
    * Get organization details with assigned support engineers
    */
   getOrganization: isAdmin
-    .input(z.object({ organizationId: z.string() }))
+    .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const organization = await ctx.prisma.organization.findUniqueOrThrow({
         where: { id: input.organizationId },
@@ -40,7 +40,7 @@ export const adminClientsRouter = router({
    * Get document links for an organization
    */
   getDocumentLinks: isAdmin
-    .input(z.object({ organizationId: z.string() }))
+    .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const documentLinks = await ctx.prisma.documentLink.findMany({
         where: { organizationId: input.organizationId },
@@ -54,7 +54,7 @@ export const adminClientsRouter = router({
    * Get pipeline progress for an organization
    */
   getPipelineProgress: isAdmin
-    .input(z.object({ organizationId: z.string() }))
+    .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const organization = await ctx.prisma.organization.findUniqueOrThrow({
         where: { id: input.organizationId },
@@ -78,7 +78,7 @@ export const adminClientsRouter = router({
    * Get workflows for an organization
    */
   getWorkflows: isAdmin
-    .input(z.object({ organizationId: z.string() }))
+    .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const workflows = await ctx.prisma.workflow.findMany({
         where: { organizationId: input.organizationId },
@@ -105,7 +105,7 @@ export const adminClientsRouter = router({
    * Get client users for an organization
    */
   getClientUsers: isAdmin
-    .input(z.object({ organizationId: z.string() }))
+    .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const users = await ctx.prisma.user.findMany({
         where: {
