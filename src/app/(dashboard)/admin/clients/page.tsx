@@ -8,6 +8,9 @@ import type { AuthSession } from '@/server/auth/types'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/page-header'
 import { ClientUsersList } from './components/client-users-list'
+import { AssignedSupportEngineers } from './components/assigned-support-engineers'
+import { DocumentLinks } from './components/document-links'
+import { PipelineProgress } from './components/pipeline-progress'
 
 export default function AdminClientsPage() {
   const { data: session, status } = useSession()
@@ -53,14 +56,15 @@ export default function AdminClientsPage() {
   const clientUsersList: any[] = clientUsers || []
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <PageHeader 
-        title="Client Management"
-      />
+    <div className="flex flex-col gap-8 py-8 px-8">
+      {/* Assigned Support Engineers Section */}
+      <AssignedSupportEngineers clientId="current-client" />
 
-      <div className="mx-4 lg:mx-6">
-        <Card className="shadow-sm border border-gray-100">
-          <div className="px-6 py-6">
+      {/* Client Users and Document Links Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
+        {/* Client Users Section */}
+        <Card className="shadow-sm border border-[#E9E7E4]">
+          <div className="p-6">
             <ClientUsersList
               clientUsers={clientUsersList}
               isLoading={isLoading}
@@ -68,7 +72,37 @@ export default function AdminClientsPage() {
             />
           </div>
         </Card>
+
+        {/* Document Links Section */}
+        <DocumentLinks 
+          onLinksChange={(links) => {
+            // TODO: Implement save functionality
+            console.log('Document links updated:', links)
+          }}
+        />
       </div>
+
+      {/* Pipeline Progress Section */}
+      <PipelineProgress 
+        clientId="current-client"
+        phases={[
+          { id: 1, name: "Discovery: Initial Survey", isCompleted: true, completedAt: "2025-01-15T10:00:00Z" },
+          { id: 2, name: "Discovery: Process deep dive", isCompleted: true, completedAt: "2025-01-20T14:30:00Z" },
+          { id: 3, name: "ADA Proposal Sent", isCompleted: true, completedAt: "2025-01-25T09:15:00Z" },
+          { id: 4, name: "ADA Proposal Review done", isCompleted: false },
+          { id: 5, name: "ADA Contract Sent", isCompleted: false },
+          { id: 6, name: "ADA Contract Signed", isCompleted: false },
+          { id: 7, name: "Credentials collected", isCompleted: false },
+          { id: 8, name: "Factory build initiated", isCompleted: false },
+          { id: 9, name: "Test plan generated", isCompleted: false },
+          { id: 10, name: "Testing started", isCompleted: false },
+          { id: 11, name: "Production deploy", isCompleted: false }
+        ]}
+        onMarkComplete={(phaseId) => {
+          // TODO: Implement mark complete functionality
+          console.log('Mark phase complete:', phaseId)
+        }}
+      />
     </div>
   )
 }
