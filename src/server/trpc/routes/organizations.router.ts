@@ -1,5 +1,5 @@
-import { router } from '../../index'
-import { isAdmin } from '../_helpers'
+import { router } from '../index'
+import { isAdmin } from './_helpers'
 
 /**
  * Admin organizations procedures for managing organizations.

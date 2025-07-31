@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
-import { router } from '../../index'
-import { isAdmin } from '../_helpers'
+import { router } from '../index'
+import { isAdmin } from './_helpers'
 import {
   createClientUserSchema,
   updateClientUserSchema,

@@ -47,10 +47,10 @@ const handler = (req: Request) =>
 ```
 
 **Exposes**:
-- `/api/trpc/admin.users.list` - List admin/SE users
-- `/api/trpc/admin.users.create` - Create user
-- `/api/trpc/admin.users.update` - Update user
-- `/api/trpc/admin.users.delete` - Delete user
+- `/api/trpc/users.list` - List admin/SE users
+- `/api/trpc/users.create` - Create user
+- `/api/trpc/users.update` - Update user
+- `/api/trpc/users.delete` - Delete user
 
 ## Frontend Configuration
 
@@ -138,7 +138,7 @@ if (session?.user.role === 'ADMIN') {
 const { data: session } = useSession()
 
 // Make authenticated tRPC call
-const { data: users } = trpc.admin.users.list.useQuery({
+const { data: users } = trpc.users.list.useQuery({
   role: roleFilter,
   search: searchTerm
 })
@@ -155,8 +155,8 @@ const { data: users } = trpc.admin.users.list.useQuery({
    - Page renders based on authentication state
 
 3. **API Calls**:
-   - Frontend calls `trpc.admin.users.list.useQuery()`
-   - HTTP request to `/api/trpc/admin.users.list`
+   - Frontend calls `trpc.users.list.useQuery()`
+   - HTTP request to `/api/trpc/users.list`
    - tRPC handler calls `createContext()` → extracts session from JWT
    - Protected procedure checks `ctx.session.user.role`
    - RBAC Prisma client filters data → returns response
@@ -176,12 +176,12 @@ The system maintains end-to-end type safety:
 
 ```typescript
 // Backend router defines types
-export const adminUsersRouter = router({
+export const usersRouter = router({
   list: isAdmin.input(userListFilterSchema).query(...)
 })
 
 // Frontend automatically gets correct types
-trpc.admin.users.list.useQuery({ role: 'ADMIN' }) // TypeScript knows this shape
+trpc.users.list.useQuery({ role: 'ADMIN' }) // TypeScript knows this shape
 ```
 
 ## Key Benefits

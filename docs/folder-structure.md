@@ -25,22 +25,38 @@ repo‑root/
 │  │  │        └─ loading.tsx  # Loading skeleton
 │  │  └─ login/                # Auth pages kept out of dashboard chrome
 │  │
-│  ├─ components/              # Re‑usable dumb UI (Button, Card, TimelineStep)
-│  │  └─ ui/                  # shadcn/ui components (skeleton.tsx includes variants)
-│  ├─ features/                # Smart slices: UI + hooks + tRPC queries per domain
-│  │  ├─ clients/
-│  │  └─ users/
+│  ├─ components/              # Re‑usable UI components
+│  │  ├─ ui/                  # shadcn/ui components (basic building blocks)
+│  │  ├─ app-sidebar.tsx      # Global navigation
+│  │  ├─ site-header.tsx      # Global header
+│  │  ├─ data-table.tsx       # Reusable table component
+│  │  └─ ...                  # Other shared components
+│  ├─ schemas/                # Zod validation schemas
+│  │  ├─ index.ts             # Barrel exports
+│  │  ├─ user.ts              # User-related schemas
+│  │  └─ client-user.ts       # Client user schemas
 │  │
 │  ├─ server/                  # Code that never ships to the browser
 │  │  ├─ trpc/
 │  │  │  │   ├─ index.ts          # context + initTRPC
-│  │  │  │   ├─ routes/           # modular routers
+│  │  │  │   ├─ routes/           # domain-based modular routers
 │  │  │  │   │   ├─ _helpers.ts   # role middlewares
-│  │  │  │   │   ├─ admin/…       # admin routers
-│  │  │  │   │   └─ client/…      # client routers
-│  │  │  │   └─ appRouter.ts      # merges all routers
+│  │  │  │   │   ├─ auth.router.ts    # authentication
+│  │  │  │   │   ├─ users.router.ts   # user management
+│  │  │  │   │   ├─ clients.router.ts # client organizations
+│  │  │  │   │   ├─ client-users.router.ts # client user management
+│  │  │  │   │   ├─ organizations.router.ts # organization management
+│  │  │  │   │   ├─ dashboard.router.ts # dashboard data
+│  │  │  │   │   └─ billing.router.ts # billing & invoicing
+│  │  │  │   └─ appRouter.ts      # merges all domain routers
 │  │  ├─ prisma/               # Prisma singleton + DB helpers
+│  │  │  ├─ client.ts          # Prisma client + RBAC factory
+│  │  │  └─ middleware/        # Prisma extensions & middleware
+│  │  │     └─ rbacGuard.ts    # Automatic organization filtering
 │  │  └─ auth/                 # next‑auth config, RBAC utilities
+│  │     ├─ config.ts          # NextAuth configuration
+│  │     ├─ getAllowedOrgs.ts  # RBAC organization computation
+│  │     └─ types.ts           # Authentication types
 │  │
 │  ├─ lib/                     # Small, framework‑agnostic helpers (formatDate, slugify)
 │  ├─ hooks/                   # Shared React hooks (useDebounce, useRole)
@@ -63,12 +79,12 @@ repo‑root/
 
 | Folder           | Owns                                                                               | Never puts here                                                              |
 | ---------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **`src/app`**    | Route handlers, layouts, pages, metadata.                                          | Business logic that isn't route‑specific (goes in `features/` or `server/`). |
-| **`components`** | Pure presentational React components.                                              | Data‑fetching, Prisma calls, tRPC hooks.                                     |
-| **`features`**   | End‑to‑end feature bundles: smart components, hooks, queries that belong together. | Cross‑cutting utilities (they live in `lib/`).                               |
+| **`src/app`**    | Route handlers, layouts, pages, metadata, page-specific components.                | Cross-cutting utilities (go in `lib/`) or shared components.                 |
+| **`components`** | Shared/reusable UI components used across multiple pages.                          | Business logic, data‑fetching, tRPC hooks, page-specific components.        |
+| **`schemas`**    | Zod validation schemas shared across frontend and backend.                         | React components, database models, API logic.                               |
 | **`server`**     | Backend‑only code: tRPC routers, auth, Prisma client.                              | React UI (never imported by the browser).                                    |
 | **`lib`**        | Tiny utility functions with *zero* React/Next.js dependencies.                     | Anything that touches the database or DOM.                                   |
-| **`hooks`**      | Generic React hooks consumable by any feature.                                     | Feature‑specific hooks (keep those co‑located in `features/*`).              |
+| **`hooks`**      | Generic React hooks consumable by any component.                                   | Page-specific hooks (keep those co‑located in page folders).                |
 | **`styles`**     | Global Tailwind entry + any non‑component CSS.                                     | Component‑scoped styles (inline in component).                               |
 | **`types`**      | Manual TypeScript types/enums shared across layers.                                | Generated types (Prisma Client lives in `node_modules/@prisma`).             |
 | **`prisma`**     | Schema & migrations – **never edit SQL by hand**.                                  | Application logic.                                                           |
@@ -76,10 +92,12 @@ repo‑root/
 ## Import Alias Cheatsheet
 
 ```typescript
-import { Card } from '@/components/card';
-import { ClientsTable } from '@/features/clients/clients-table';
+import { Card } from '@/components/ui/card';
+import { AppSidebar } from '@/components/app-sidebar';
+import { createUserSchema } from '@/schemas/user';
 import { auth } from '@/server/auth';
 import { formatCurrency } from '@/lib/formatCurrency';
+import { trpc } from '@/lib/trpc';
 ```
 
 ## Single-Page Application Architecture
@@ -106,9 +124,11 @@ We implement **nested layouts** to create seamless single-page experiences for b
 
 ## High‑Level Flow
 
-1. **Routes** in `src/app/**` call **tRPC** procedures (`src/server/trpc`)
-2. Procedures use **Prisma Client** (`src/server/prisma`) to hit Postgres  
-3. React UI re‑uses presentation components from `src/components` and smart slices from `src/features`
-4. **Layouts** provide persistent shells for seamless SPA experiences
+1. **Pages** in `src/app/(dashboard)/**` contain business logic and call **tRPC** procedures
+2. **tRPC routers** in `src/server/trpc/routes/` handle API logic with automatic RBAC filtering
+3. **Prisma Client** with RBAC guard (`src/server/prisma`) enforces data isolation
+4. **Page components** compose UI from shared components (`src/components`) and page-specific components
+5. **Layouts** provide persistent shells for seamless SPA experiences
+6. **Schemas** in `src/schemas/` validate data across frontend and backend
 
 Keep new files within these boundaries and the project stays coherent, testable, and easy to navigate.
