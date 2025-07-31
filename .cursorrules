@@ -1,7 +1,7 @@
 # Project Purpose
 
-One **Next.js 14** code‑base that hosts both _Admin_ and _Client_ dashboards for the Nexus platform.  
-Tech stack: **React 19, TypeScript (strict), Tailwind + shadcn‑ui, tRPC, Prisma, PostgreSQL, next‑auth**.
+One **Next.js 14** SPA hosting both _Admin_ and _Client_ dashboards for the Nexus platform.  
+Tech stack: **React 19, TypeScript (strict), Tailwind + shadcn‑ui, tRPC, Prisma, PostgreSQL, NextAuth**.
 
 --
 
@@ -11,30 +11,30 @@ Generally speaking, I will run commands.
 
 ---
 
-## Test Project Constraints
+## Architecture Constraints
 
-| Area | Constraint |
+| Area | Implementation |
 |------|------------|
-| **Authentication** | Basic email/password with next-auth. No OAuth, SSO, or 2FA required. |
-| **Database** | Single shared PostgreSQL database for both Admin and Client apps. |
-| **Platform** | Desktop web only - no mobile responsive design needed. |
-| **Notifications** | Email only - no SMS provider integration required. |
-| **Data retention** | Keep all logs/exceptions/execution history indefinitely. |
-| **Accessibility** | Not required - focus on functionality and design quality. |
-| **Missing designs** | Create reasonable loading, error, empty states where Figma is incomplete. |
+| **Authentication** | NextAuth.js v4 with email/password. Roles: ADMIN, SE, CLIENT. |
+| **Database** | Single PostgreSQL with automatic RBAC filtering via Prisma extensions. |
+| **Platform** | Desktop web SPA with nested layouts. No mobile responsive needed. |
+| **Data Security** | Automatic organization-scoped queries via RBAC guard middleware. |
+| **Loading States** | Skeleton components for structure, Progress for tracked operations. |
 
 **Development Priorities**: 1) Functionality 2) Code quality 3) Design accuracy
 
 ---
 
-## Repository Hygiene
+## File Organization
 
-| Area | Rule |
-|------|------|
-| **Root layout** | Keep `apps/`, `prisma/`, `src/`, `.github/`, `scripts/`. No code in repo root. |
-| **Route groups** | `/admin/**` and `/client/**` live under `src/app/(dashboard)/*`. Anything else goes in shared folders. |
-| **Import aliases** | Use `@/` as defined in `tsconfig.json`; _never_ long relative paths like `../../../`. |
-| **Feature flags / TODOs** | Tag with `// TODO(@name)[MM‑DD]: …`. Include owner + date. Cursor will surface these. |
+| Area | Location | Rule |
+|------|----------|------|
+| **Pages** | `src/app/(dashboard)/admin/*` & `src/app/(dashboard)/client/*` | Business logic, tRPC calls, state management |
+| **Page Components** | `src/app/[area]/[page]/components/*` | Page-specific UI components (pure presentation) |
+| **Shared Components** | `src/components/*` | Only when used by 2+ pages in different areas |
+| **tRPC Routers** | `src/server/trpc/routes/*.router.ts` | Domain-based (users, clients, workflows), not role-based |
+| **Schemas** | `src/schemas/*.ts` | Zod validation shared between frontend/backend |
+| **Import aliases** | Use `@/` always; never relative paths like `../../../` |
 
 ---
 
@@ -42,42 +42,35 @@ Generally speaking, I will run commands.
 
 * **Formatter**: `prettier` _(auto‑run via Cursor on save)_  
 * **Linter**: `eslint --max-warnings 0`  
-* **TypeScript**: `strict: true`, `noImplicitAny`, `exactOptionalPropertyTypes`.  
-* **Naming**: `PascalCase` for React components, `camelCase` for functions/vars, `UPPER_SNAKE_CASE` for envs.  
-* **React hooks**: Custom hooks start with `use*`. Abide by the Rules of Hooks.  
-* **tRPC routers**: group by domain (`/server/routers/admin.ts`, etc.).  
-* **Prisma**: mutations wrapped in `try/catch`; never use `@ts-ignore`.
+* **TypeScript**: `strict: true`, `noImplicitAny`, `exactOptionalPropertyTypes`
+* **Naming**: `PascalCase` for React components, `camelCase` for functions/vars, `UPPER_SNAKE_CASE` for envs
+* **Component Pattern**: Business logic in pages, pure UI in page-specific components
+* **RBAC**: Use `isAdmin`, `isSE`, `isClient` middlewares from `_helpers.ts`
+* **Prisma**: RBAC guard automatically filters queries; no manual `organizationId` needed
 
 ---
 
-## Secrets & Environment
+## Environment & Database
 
 * **Local dev** → `.env.development` *(NOT committed)*  
-* **Test/CI**   → `.env.test`  
-* **Prod**      → Vercel project settings  
-* Never commit credentials, JWT secrets, or connection strings.
+* **Migrations** via `prisma migrate dev` (local) & `prisma migrate deploy` (CI/prod)
+* **RBAC Guard** automatically scopes all queries to user's allowed organizations
+* **Access control** enforced at database level via Prisma Client Extensions
 
 ---
 
-## Database
+## SPA Architecture
 
-* **Migrations** via `prisma migrate dev` (local) & `prisma migrate deploy` (CI/prod).  
-* No raw SQL unless Prisma cannot express the query; wrap raw calls in repository helper.
-* **Access control** via organization-scoped queries and role-based middleware.
-
----
-
-## Deployment
-
-* **Local**: `pnpm db:up && pnpm dev` (starts Docker Postgres + Next dev).  
-* **CI**   : GitHub Actions `build-lint-test`.  
-* **Prod**: Vercel build runs `postinstall → prisma migrate deploy` against Neon.
+* **Nested Layouts**: Persistent shells (`admin/layout.tsx`, `client/layout.tsx`) stay mounted
+* **Loading States**: Use `loading.tsx` files + skeleton components for instant feedback
+* **Navigation**: Active state via `useSelectedLayoutSegments()` 
+* **Component Hierarchy**: Page → Page Components → shadcn/ui base components
 
 ---
 
 ## 📚 Documentation
 
-* High‑level docs go in `/docs/*.md`.  
-* This `.cursorrules` file is the canonical styleguide; keep it updated as the architecture evolves.
+* Complete architecture docs in `/docs/*.md`
+* This `.cursorrules` is the style/convention reference
 
 <!-- End of .cursorrules -->
