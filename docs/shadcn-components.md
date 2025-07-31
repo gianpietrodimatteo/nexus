@@ -94,9 +94,35 @@ src/app/(dashboard)/
 | **Dialog** | `ui/dialog.tsx` | Modal dialogs | Used for forms, confirmations | 
 | **Form** | `ui/form.tsx` | Form handling | react-hook-form integration with validation |
 
-## Custom Components Built on shadcn/ui
+## Component Organization Pattern
 
-### Application-Specific Components
+### Separation of Concerns
+
+We follow a **page-specific component pattern** to maintain clear separation of concerns:
+
+```
+src/
+├─ components/                    # Shared/reusable components
+│  ├─ ui/                        # shadcn/ui base components
+│  ├─ app-sidebar.tsx           # Global navigation
+│  ├─ site-header.tsx           # Global header
+│  └─ data-table.tsx            # Reusable table component
+└─ app/(dashboard)/
+   └─ admin/users/
+      ├─ page.tsx                # Page logic & business rules
+      └─ components/             # Page-specific components
+         ├─ add-user-modal.tsx
+         ├─ edit-user-modal.tsx
+         └─ delete-user-dialog.tsx
+```
+
+**Key Principles:**
+- **Business logic lives in pages**: All tRPC calls, state management, and data handling stay in page components
+- **Page-specific components**: Components that serve only one page go in the page's `components/` folder
+- **Shared components**: Only truly reusable components live in the global `src/components/` folder
+- **Shell pattern**: If similar components emerge across pages, extract a reusable shell component
+
+### Global Shared Components
 
 | Component | Built With | Purpose |
 |-----------|------------|---------|
@@ -107,9 +133,41 @@ src/app/(dashboard)/
 | **DataTable** | Table + TanStack Table | Advanced data tables with sorting, filtering |
 | **LoginForm** | Card, Input, Button, Label | Authentication form |
 | **SectionCards** | Card | Dashboard overview cards |
-| **AddUserModal** | Dialog, Form, Select, Input, Checkbox | User creation modal with conditional fields |
-| **EditUserModal** | Dialog, Form, Select, Input, Checkbox, Skeleton | User editing modal with pre-populated data and loading states |
-| **DeleteUserDialog** | Dialog, Button | Confirmation dialog for user deletion with destructive action |
+
+### Page-Specific Components
+
+| Page | Components | Purpose |
+|------|------------|---------|
+| `/admin/users` | AddUserModal, EditUserModal, DeleteUserDialog | User management modals specific to admin users page |
+
+### Future Abstraction
+
+When similar components are needed across multiple pages:
+1. **Identify commonalities**: Look for shared patterns in props, structure, and behavior
+2. **Extract shell component**: Create a base component in `src/components/` with slots for customization
+3. **Page-specific implementations**: Import the shell and customize it per page needs
+
+**Example Future Pattern:**
+```typescript
+// src/components/entity-form-modal.tsx (shell)
+export function EntityFormModal<T>({ 
+  children, 
+  onSubmit, 
+  validationSchema 
+}: EntityFormModalProps<T>) {
+  // Common modal structure, form handling, validation
+  return <Dialog>{children}</Dialog>
+}
+
+// src/app/admin/users/components/add-user-modal.tsx (implementation)
+export function AddUserModal(props: AddUserModalProps) {
+  return (
+    <EntityFormModal validationSchema={createUserSchema} onSubmit={handleSubmit}>
+      {/* User-specific form fields */}
+    </EntityFormModal>
+  )
+}
+```
 
 ## Theme & Styling
 
@@ -223,24 +281,41 @@ const isActive = (url: string) => {
 
 ### File Organization
 ```
-src/components/
-├─ ui/                    # shadcn/ui components (managed by CLI)
-│  ├─ skeleton.tsx        # Base Skeleton + reusable skeleton variants
-│  ├─ progress.tsx        # Progress indicators for determinate loading
-│  └─ ...                 # Other shadcn/ui components
-├─ app-sidebar.tsx        # App-specific layout components
-├─ site-header.tsx        # Custom header component
-├─ nav-*.tsx             # Navigation components
-├─ data-table.tsx        # Complex data display
-└─ section-cards.tsx     # Dashboard components
+src/
+├─ components/                    # Global shared components only
+│  ├─ ui/                        # shadcn/ui components (managed by CLI)
+│  │  ├─ skeleton.tsx           # Base Skeleton + reusable skeleton variants  
+│  │  ├─ progress.tsx           # Progress indicators for determinate loading
+│  │  └─ ...                    # Other shadcn/ui components
+│  ├─ app-sidebar.tsx           # Global navigation
+│  ├─ site-header.tsx           # Global header
+│  ├─ nav-*.tsx                 # Navigation components
+│  ├─ data-table.tsx            # Reusable table component
+│  └─ section-cards.tsx         # Dashboard components
+└─ app/
+   └─ (dashboard)/
+      └─ [feature]/[page]/
+         ├─ page.tsx             # Business logic, tRPC calls, state
+         ├─ loading.tsx          # Loading states
+         └─ components/          # Page-specific components
+            ├─ [page]-modal.tsx
+            ├─ [page]-form.tsx
+            └─ [page]-dialog.tsx
 ```
 
 ### Best Practices
+
+#### Component Organization
+- **Page-specific first**: New components start in page `components/` folders
+- **Business logic in pages**: Keep tRPC calls, mutations, and state management in page components
+- **Promote when reused**: Only move to global `src/components/` when used by multiple pages
+- **Shell pattern**: Extract common patterns into reusable shells when appropriate
 
 #### Component Creation
 - **Composition over inheritance**: Combine simple components into complex ones
 - **Consistent prop patterns**: Follow shadcn conventions for props and variants
 - **TypeScript integration**: Leverage component prop types and variants
+- **Clear boundaries**: Separate UI components from business logic
 
 #### Loading States
 - **Use appropriate loading type**: Skeleton for structure, Progress for tracked operations

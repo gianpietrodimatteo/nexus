@@ -9,9 +9,9 @@ import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/page-header'
 import { UserFilters } from '@/components/user-filters'
 import { UserListTable } from '@/components/user-list-table'
-import { AddUserModal } from '@/components/add-user-modal'
-import { EditUserModal } from '@/components/edit-user-modal'
-import { DeleteUserDialog } from '@/components/delete-user-dialog'
+import { AddUserModal } from './components/add-user-modal'
+import { EditUserModal } from './components/edit-user-modal'
+import { DeleteUserDialog } from './components/delete-user-dialog'
 
 export default function AdminUsersPage() {
   const { data: session, status } = useSession()
