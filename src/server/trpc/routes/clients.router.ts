@@ -91,6 +91,7 @@ export const adminClientsRouter = router({
           _count: {
             select: {
               executions: true,
+              exceptions: true,
             },
           },
         },

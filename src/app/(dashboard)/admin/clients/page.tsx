@@ -12,6 +12,7 @@ import { AssignedSupportEngineers } from './components/assigned-support-engineer
 import { DocumentLinks } from './components/document-links'
 import { PipelineProgress } from './components/pipeline-progress'
 import { ClientSelector } from './components/client-selector'
+import { ClientWorkflowsTable } from './components/client-workflows-table'
 import { useAdminHeader } from '@/components/admin-header-context'
 
 export default function AdminClientsPage() {
@@ -41,6 +42,11 @@ export default function AdminClientsPage() {
   )
 
   const { data: pipelineData, isLoading: pipelineLoading } = trpc.clients.getPipelineProgress.useQuery(
+    { organizationId: selectedOrganizationId },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
+
+  const { data: workflows, isLoading: workflowsLoading } = trpc.clients.getWorkflows.useQuery(
     { organizationId: selectedOrganizationId },
     { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
   )
@@ -194,10 +200,14 @@ export default function AdminClientsPage() {
 
     if (activeTab === 'workflows') {
       return (
-        <div className="text-center py-16">
-          <div className="text-[#6B7280] text-lg">Client Workflows</div>
-          <div className="text-[#9CA3AF] text-sm mt-2">Workflow management coming soon</div>
-        </div>
+        <ClientWorkflowsTable
+          workflows={workflows || []}
+          isLoading={workflowsLoading}
+          onAddWorkflow={() => {
+            // TODO: Implement add workflow functionality
+            console.log('Add workflow clicked')
+          }}
+        />
       )
     }
 
