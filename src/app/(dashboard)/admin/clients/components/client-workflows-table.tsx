@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { trpc } from '@/lib/trpc'
 import {
   Table,
   TableBody,
@@ -32,12 +33,14 @@ interface ClientWorkflowsTableProps {
   workflows: Workflow[]
   isLoading: boolean
   onAddWorkflow: () => void
+  onWorkflowUpdated?: () => void
 }
 
 export function ClientWorkflowsTable({ 
   workflows, 
   isLoading, 
-  onAddWorkflow 
+  onAddWorkflow,
+  onWorkflowUpdated
 }: ClientWorkflowsTableProps) {
   const [editingValues, setEditingValues] = useState<{
     [workflowId: string]: {
@@ -46,8 +49,27 @@ export function ClientWorkflowsTable({
     }
   }>({})
 
+  // Mutations for updating workflows
+  const updateMetricsMutation = trpc.workflows.updateMetrics.useMutation({
+    onSuccess: () => {
+      onWorkflowUpdated?.()
+    },
+    onError: (error) => {
+      console.error('Failed to update workflow metrics:', error)
+    },
+  })
+
+  const toggleStatusMutation = trpc.workflows.toggleStatus.useMutation({
+    onSuccess: () => {
+      onWorkflowUpdated?.()
+    },
+    onError: (error) => {
+      console.error('Failed to toggle workflow status:', error)
+    },
+  })
+
   const handleInputChange = (workflowId: string, field: 'timeSaved' | 'moneySaved', value: string) => {
-    const numValue = parseFloat(value) || 0
+    const numValue = parseFloat(value) || undefined
     setEditingValues(prev => ({
       ...prev,
       [workflowId]: {
@@ -55,8 +77,24 @@ export function ClientWorkflowsTable({
         [field]: numValue
       }
     }))
-    // TODO: Implement save functionality
-    console.log(`Update ${field} for workflow ${workflowId}:`, numValue)
+  }
+
+  const handleInputBlur = (workflowId: string) => {
+    const editedValues = editingValues[workflowId]
+    if (editedValues) {
+      updateMetricsMutation.mutate({
+        id: workflowId,
+        timeSavedPerExecution: editedValues.timeSaved,
+        moneySavedPerExecution: editedValues.moneySaved,
+      })
+    }
+  }
+
+  const handleStatusToggle = (workflowId: string, isActive: boolean) => {
+    toggleStatusMutation.mutate({
+      id: workflowId,
+      isActive,
+    })
   }
 
   const formatDate = (dateString: string) => {
@@ -166,6 +204,7 @@ export function ClientWorkflowsTable({
                         value={editingValues[workflow.id]?.timeSaved ?? workflow.timeSavedPerExecution ?? 0}
                         className="w-20 h-7 text-right text-sm border border-[#E9E7E4]"
                         onChange={(e) => handleInputChange(workflow.id, 'timeSaved', e.target.value)}
+                        onBlur={() => handleInputBlur(workflow.id)}
                       />
                       <span className="text-sm text-[#757575]">min</span>
                     </div>
@@ -177,6 +216,7 @@ export function ClientWorkflowsTable({
                         value={editingValues[workflow.id]?.moneySaved ?? Number(workflow.moneySavedPerExecution ?? 0)}
                         className="w-20 h-7 text-right text-sm border border-[#E9E7E4]"
                         onChange={(e) => handleInputChange(workflow.id, 'moneySaved', e.target.value)}
+                        onBlur={() => handleInputBlur(workflow.id)}
                       />
                       <span className="text-sm text-[#757575]">USD</span>
                     </div>
@@ -184,10 +224,7 @@ export function ClientWorkflowsTable({
                   <TableCell className="text-center">
                     <Switch 
                       checked={workflow.isActive}
-                      onCheckedChange={(checked) => {
-                        // TODO: Implement toggle functionality
-                        console.log(`Toggle workflow ${workflow.id} to:`, checked)
-                      }}
+                      onCheckedChange={(checked) => handleStatusToggle(workflow.id, checked)}
                     />
                   </TableCell>
                   <TableCell className="text-right">

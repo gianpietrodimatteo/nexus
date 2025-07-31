@@ -8,6 +8,8 @@ import { adminDashboardRouter } from './routes/dashboard.router'
 import { adminClientsRouter } from './routes/clients.router'
 import { usersRouter } from './routes/users.router'
 import { adminOrganizationsRouter } from './routes/organizations.router'
+import { workflowsRouter } from './routes/workflows.router'
+import { departmentsRouter } from './routes/departments.router'
 
 /**
  * Main application router that composes all domain routers.
@@ -19,6 +21,8 @@ export const appRouter = router({
   users: usersRouter,
   clients: adminClientsRouter,
   organizations: adminOrganizationsRouter,
+  workflows: workflowsRouter,
+  departments: departmentsRouter,
   dashboard: adminDashboardRouter,
   billing: billingRouter,
 })

@@ -13,6 +13,7 @@ import { DocumentLinks } from './components/document-links'
 import { PipelineProgress } from './components/pipeline-progress'
 import { ClientSelector } from './components/client-selector'
 import { ClientWorkflowsTable } from './components/client-workflows-table'
+import { AddWorkflowModal } from './components/add-workflow-modal'
 import { useAdminHeader } from '@/components/admin-header-context'
 
 export default function AdminClientsPage() {
@@ -20,6 +21,7 @@ export default function AdminClientsPage() {
   const router = useRouter()
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'overview' | 'workflows'>('overview')
+  const [showAddWorkflowModal, setShowAddWorkflowModal] = useState(false)
   const { setHeaderContent } = useAdminHeader()
 
   // Type guard for our custom session
@@ -46,7 +48,7 @@ export default function AdminClientsPage() {
     { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
   )
 
-  const { data: workflows, isLoading: workflowsLoading } = trpc.clients.getWorkflows.useQuery(
+  const { data: workflows, isLoading: workflowsLoading, refetch: refetchWorkflows } = trpc.clients.getWorkflows.useQuery(
     { organizationId: selectedOrganizationId },
     { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
   )
@@ -203,10 +205,8 @@ export default function AdminClientsPage() {
         <ClientWorkflowsTable
           workflows={workflows || []}
           isLoading={workflowsLoading}
-          onAddWorkflow={() => {
-            // TODO: Implement add workflow functionality
-            console.log('Add workflow clicked')
-          }}
+          onAddWorkflow={() => setShowAddWorkflowModal(true)}
+          onWorkflowUpdated={() => refetchWorkflows()}
         />
       )
     }
@@ -266,6 +266,19 @@ export default function AdminClientsPage() {
       <div className="px-8 py-8 space-y-8">
         {renderTabContent()}
       </div>
+
+      {/* Add Workflow Modal */}
+      {selectedOrganizationId && (
+        <AddWorkflowModal
+          open={showAddWorkflowModal}
+          onOpenChange={setShowAddWorkflowModal}
+          organizationId={selectedOrganizationId}
+          onSuccess={() => {
+            // Refresh workflows data
+            void refetchWorkflows()
+          }}
+        />
+      )}
     </div>
   )
 }
