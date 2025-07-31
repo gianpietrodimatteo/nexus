@@ -91,6 +91,8 @@ src/app/(dashboard)/
 |-----------|----------|--------|-------|
 | **Chart** | `ui/chart.tsx` | Data visualization | Custom wrapper for Recharts integration |
 | **Sonner** | `ui/sonner.tsx` | Toast notifications | Global notification system |
+| **Dialog** | `ui/dialog.tsx` | Modal dialogs | Used for forms, confirmations | 
+| **Form** | `ui/form.tsx` | Form handling | react-hook-form integration with validation |
 
 ## Custom Components Built on shadcn/ui
 
@@ -105,6 +107,8 @@ src/app/(dashboard)/
 | **DataTable** | Table + TanStack Table | Advanced data tables with sorting, filtering |
 | **LoginForm** | Card, Input, Button, Label | Authentication form |
 | **SectionCards** | Card | Dashboard overview cards |
+| **AddUserModal** | Dialog, Form, Select, Input, Checkbox | User creation modal with conditional fields |
+| **EditUserModal** | Dialog, Form, Select, Input, Checkbox, Skeleton | User editing modal with pre-populated data and loading states |
 
 ## Theme & Styling
 
@@ -264,9 +268,7 @@ return <div className="h-4 bg-gray-200 animate-pulse" />
 As the application grows, we may add:
 - **Command** - Command palette for quick actions
 - **Popover** - Context-sensitive information
-- **Dialog** - Modal dialogs for complex forms
 - **Calendar** - Date selection components
-- **Form** - Enhanced form handling with validation
 
 ### SPA Enhancement
 - Add more loading.tsx files for instant feedback

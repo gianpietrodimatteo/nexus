@@ -9,12 +9,16 @@ import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/page-header'
 import { UserFilters } from '@/components/user-filters'
 import { UserListTable } from '@/components/user-list-table'
+import { AddUserModal } from '@/components/add-user-modal'
+import { EditUserModal } from '@/components/edit-user-modal'
 
 export default function AdminUsersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [roleFilter, setRoleFilter] = useState<'all' | 'ADMIN' | 'SE'>('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
+  const [editUserId, setEditUserId] = useState<string | null>(null)
 
   // Type guard for our custom session
   const authSession = session as AuthSession | null
@@ -56,13 +60,11 @@ export default function AdminUsersPage() {
   const usersList: any[] = users || []
 
   const handleAddUser = () => {
-    // TODO: Implement add user functionality
-    console.log('Add user clicked')
+    setIsAddUserModalOpen(true)
   }
 
   const handleEditUser = (userId: string) => {
-    // TODO: Implement edit user functionality
-    console.log('Edit user:', userId)
+    setEditUserId(userId)
   }
 
   const handleDeleteUser = (userId: string) => {
@@ -100,6 +102,23 @@ export default function AdminUsersPage() {
           </div>
         </Card>
       </div>
+      
+      <AddUserModal
+        open={isAddUserModalOpen}
+        onOpenChange={setIsAddUserModalOpen}
+        onSuccess={() => {
+          refetch() // Refresh the users list after successful creation
+        }}
+      />
+      
+      <EditUserModal
+        open={!!editUserId}
+        onOpenChange={(open) => !open && setEditUserId(null)}
+        userId={editUserId}
+        onSuccess={() => {
+          refetch() // Refresh the users list after successful update
+        }}
+      />
     </div>
   )
 }

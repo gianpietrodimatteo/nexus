@@ -7,6 +7,7 @@ import { billingRouter } from './routes/billing.router'
 import { adminDashboardRouter } from './routes/admin/dashboard.router'
 import { adminClientsRouter } from './routes/admin/clients.router'
 import { adminUsersRouter } from './routes/admin/users.router'
+import { adminOrganizationsRouter } from './routes/admin/organizations.router'
 import { clientDashboardRouter } from './routes/client/dashboard.router'
 import { clientWorkflowsRouter } from './routes/client/workflows.router'
 
@@ -20,6 +21,7 @@ export const appRouter = router({
     dashboard: adminDashboardRouter,
     clients: adminClientsRouter,
     users: adminUsersRouter,
+    organizations: adminOrganizationsRouter,
   }),
   client: router({
     dashboard: clientDashboardRouter,
