@@ -3,6 +3,12 @@
 One **Next.js 14** code‑base that hosts both _Admin_ and _Client_ dashboards for the Nexus platform.  
 Tech stack: **React 19, TypeScript (strict), Tailwind + shadcn‑ui, tRPC, Prisma, PostgreSQL, next‑auth**.
 
+--
+
+Do not edit dependencies, I will add them myself.
+Do not try to restart the Typescript server.
+Generally speaking, I will run commands.
+
 ---
 
 ## Test Project Constraints

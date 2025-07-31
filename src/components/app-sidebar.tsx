@@ -37,7 +37,7 @@ const getNavData = (userRole?: string) => {
     },
     {
       title: "Clients",
-      url: "#",
+      url: "/admin/clients",
       icon: IconUsers,
     },
     {
