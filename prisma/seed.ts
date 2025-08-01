@@ -10,21 +10,21 @@ async function main() {
   const hashedPassword = await bcrypt.hash('password123', 12)
 
   // Create subscription plans first
-  const basicPlan = await prisma.subscriptionPlan.upsert({
-    where: { id: 'basic-plan' },
+  const enterprisePlan = await prisma.subscriptionPlan.upsert({
+    where: { id: 'enterprise-plan' },
     update: {},
     create: {
-      id: 'basic-plan',
-      name: 'Basic Plan',
+      id: 'enterprise-plan',
+      name: 'Enterprise',
       pricingModel: PricingModel.CONSUMPTION,
-      contractLength: ContractLength.MONTH,
+      contractLength: ContractLength.YEAR,
       billingCadence: BillingCadence.MONTHLY,
-      setupFee: 500,
+      setupFee: 1000,
       prepaymentPercentage: 0,
-      capAmount: 10000,
-      overageCost: 50,
-      creditsPerPeriod: 100,
-      pricePerCredit: 25,
+      capAmount: 50000,
+      overageCost: 100,
+      creditsPerPeriod: 10000, // 10,000 credits per month
+      pricePerCredit: 0.20, // $0.20 per credit
       productUsageAPI: ProductUsageAPI.NEXUS_BASE
     }
   })
@@ -38,9 +38,9 @@ async function main() {
       name: 'Acme Corporation',
       url: 'https://acme.com',
       contractStartDate: new Date('2024-01-01'),
-      contractEndDate: new Date('2024-12-31'),
+      contractEndDate: new Date('2025-05-01'), // Contract renewal date matching the UI
       pipelinePhase: PipelinePhase.TESTING_STARTED,
-      subscriptionPlanId: basicPlan.id
+      subscriptionPlanId: enterprisePlan.id
     }
   })
 
@@ -255,6 +255,129 @@ async function main() {
     ]
   })
 
+  // Create billing-related data
+  console.log('💳 Creating billing data...')
+
+  // Create payment method data
+  await prisma.paymentMethodData.upsert({
+    where: { organizationId: testOrg.id },
+    update: {},
+    create: {
+      organizationId: testOrg.id,
+      isPrimary: true,
+      cardLast4: '4242',
+      cardBrand: 'Visa',
+      cardExpMonth: 12,
+      cardExpYear: 2025,
+      stripePaymentMethodId: 'pm_test_1234567890'
+    }
+  })
+
+  // Create usage tracking data for the last 6 months
+  const currentDate = new Date()
+  const usageData = []
+  
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+    const month = date.getMonth() + 1
+    const year = date.getFullYear()
+    
+    // Simulate growing usage over time
+    const baseApiCalls = 200000 + (i * 25000)
+    const baseStorage = 1000 + (i * 50) // GB
+    const baseUsers = 100 + (i * 5)
+    
+    usageData.push({
+      organizationId: testOrg.id,
+      month,
+      year,
+      apiCalls: baseApiCalls + Math.floor(Math.random() * 50000),
+      storageUsedGB: baseStorage + Math.floor(Math.random() * 200),
+      activeUsers: baseUsers + Math.floor(Math.random() * 20),
+      workflowExecutions: 150 + Math.floor(Math.random() * 100)
+    })
+  }
+
+  await prisma.usageTracking.createMany({
+    data: usageData,
+    skipDuplicates: true
+  })
+
+  // Create SE hours tracking data for the last 6 months
+  const seHoursData = []
+  
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+    const month = date.getMonth() + 1
+    const year = date.getFullYear()
+    
+    // Simulate varying SE hours usage
+    const allocatedHours = 20 // Standard allocation
+    const usedHours = 10 + Math.random() * 15 // Random between 10-25 hours
+    
+    seHoursData.push({
+      organizationId: testOrg.id,
+      month,
+      year,
+      allocatedHours,
+      usedHours: Math.min(usedHours, allocatedHours) // Can't use more than allocated
+    })
+  }
+
+  await prisma.sEHoursTracking.createMany({
+    data: seHoursData,
+    skipDuplicates: true
+  })
+
+  // Create sample invoices
+  const invoiceData = []
+  
+  for (let i = 5; i >= 0; i--) {
+    const invoiceDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+    const dueDate = new Date(invoiceDate.getTime() + (30 * 24 * 60 * 60 * 1000)) // 30 days later
+    
+    // Base amount plus usage-based charges
+    const baseAmount = 2000 // $2000 monthly fee
+    const usageCharges = Math.floor(Math.random() * 500) // Random usage charges
+    const totalAmount = baseAmount + usageCharges
+    
+    invoiceData.push({
+      organizationId: testOrg.id,
+      invoiceDate,
+      dueDate,
+      amount: totalAmount,
+      paymentMethod: 'STRIPE',
+      status: i === 0 ? 'PENDING' : 'PAID', // Current month pending, others paid
+      stripeInvoiceId: `in_test_${Math.random().toString(36).substr(2, 9)}`
+    })
+  }
+
+  await prisma.invoice.createMany({
+    data: invoiceData,
+    skipDuplicates: true
+  })
+
+  // Create some sample credits applied by admin
+  await prisma.credit.createMany({
+    data: [
+      {
+        organizationId: testOrg.id,
+        amount: 500,
+        reason: 'Welcome bonus for new customer',
+        appliedBy: adminUser.id,
+        appliedAt: new Date('2024-01-01T10:00:00Z')
+      },
+      {
+        organizationId: testOrg.id,
+        amount: 250,
+        reason: 'Service disruption compensation',
+        appliedBy: adminUser.id,
+        appliedAt: new Date('2024-02-15T14:30:00Z')
+      }
+    ],
+    skipDuplicates: true
+  })
+
   console.log('✅ Seed completed successfully!')
   console.log('👤 Created users:')
   console.log(`   Admin: ${adminUser.email}`)
@@ -262,6 +385,10 @@ async function main() {
   console.log(`   Client: ${clientUser.email}`)
   console.log(`🏢 Created organization: ${testOrg.name}`)
   console.log(`🏭 Created workflows: ${workflow1.name}, ${workflow2.name}`)
+  console.log(`💳 Created billing data: payment method, usage tracking, invoices, and credits`)
+  console.log(`📊 Created ${usageData.length} months of usage data`)
+  console.log(`⏰ Created ${seHoursData.length} months of SE hours tracking`)
+  console.log(`🧾 Created ${invoiceData.length} sample invoices`)
 }
 
 main()
