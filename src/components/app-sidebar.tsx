@@ -90,14 +90,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="h-[72px] flex items-center justify-center">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="data-[slot=sidebar-menu-button]:!p-4 h-auto"
             >
-              <a href="/admin">
+              <a href="/admin" className="flex items-center gap-2">
                 <img src="/braintrust-logo.svg" alt="Nexus" className="!size-5" />
                 <span className="text-base font-semibold">Nexus</span>
               </a>

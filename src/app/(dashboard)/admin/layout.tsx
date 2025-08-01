@@ -14,15 +14,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         style={
           {
             "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
+            "--header-height": "72px",
           } as React.CSSProperties
         }
+        className="!gap-0"
       >
-        <AppSidebar variant="inset" />
-        <SidebarInset>
+        <AppSidebar variant="inset" className="!border-r-0" />
+        <SidebarInset className="!rounded-none">
           <SiteHeader />
           <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="@container/main flex flex-1 flex-col gap-2 p-6">
               <Suspense fallback={<div className="flex justify-center items-center min-h-screen">Loading...</div>}>
                 {children}
               </Suspense>
