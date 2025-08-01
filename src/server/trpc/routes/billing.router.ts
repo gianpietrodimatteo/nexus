@@ -1,5 +1,5 @@
 import { router } from '../index'
-import { isAdmin } from './_helpers'
+import { isAdmin, isAdminOrSE } from './_helpers'
 import { organizationIdSchema } from '@/schemas/common'
 import { 
   applyCreditSchema,
@@ -14,14 +14,17 @@ import {
 import { z } from 'zod'
 
 /**
- * Admin billing procedures for managing client billing and usage data.
- * All procedures require ADMIN role.
+ * Billing procedures for managing client billing and usage data.
+ * ADMIN: Full access to all billing operations and system management
+ * SE: View-only access to billing data for their assigned organizations (automatically filtered by RBAC guard)
  */
 export const billingRouter = router({
   /**
    * Get comprehensive billing overview for an organization
+   * ADMIN: Can get billing overview for any organization
+   * SE: Can get billing overview for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getBillingOverview: isAdmin
+  getBillingOverview: isAdminOrSE
     .input(organizationIdSchema)
     .output(billingOverviewSchema)
     .query(async ({ input, ctx }) => {
@@ -77,8 +80,10 @@ export const billingRouter = router({
 
   /**
    * Get usage summary for an organization
+   * ADMIN: Can get usage summary for any organization
+   * SE: Can get usage summary for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getUsageSummary: isAdmin
+  getUsageSummary: isAdminOrSE
     .input(z.object({
       organizationId: z.string(),
       month: z.number().int().min(1).max(12).optional(),
@@ -110,8 +115,10 @@ export const billingRouter = router({
 
   /**
    * Get recent invoices for an organization
+   * ADMIN: Can get recent invoices for any organization
+   * SE: Can get recent invoices for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getRecentInvoices: isAdmin
+  getRecentInvoices: isAdminOrSE
     .input(z.object({
       organizationId: z.string(),
       limit: z.number().int().min(1).max(50).default(10),
@@ -143,8 +150,10 @@ export const billingRouter = router({
 
   /**
    * Get payment method information for an organization
+   * ADMIN: Can get payment method for any organization
+   * SE: Can get payment method for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getPaymentMethod: isAdmin
+  getPaymentMethod: isAdminOrSE
     .input(organizationIdSchema)
     .output(paymentMethodResponseSchema)
     .query(async ({ input, ctx }) => {
@@ -178,6 +187,8 @@ export const billingRouter = router({
 
   /**
    * Apply credit to an organization (admin only feature)
+   * ADMIN: Can apply credits to any organization
+   * SE: Not allowed - financial modifications require admin privileges
    */
   applyCredit: isAdmin
     .input(applyCreditSchema)
@@ -224,8 +235,10 @@ export const billingRouter = router({
 
   /**
    * Get all invoices for an organization with filtering
+   * ADMIN: Can get all invoices for any organization
+   * SE: Can get all invoices for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getAllInvoices: isAdmin
+  getAllInvoices: isAdminOrSE
     .input(z.object({
       organizationId: z.string(),
       startDate: z.date().optional(),
@@ -276,6 +289,8 @@ export const billingRouter = router({
 
   /**
    * Get all subscription plans with client counts
+   * ADMIN: Can get all subscription plans (system-wide operation)
+   * SE: Not allowed - subscription plan management is system administration
    */
   getAllSubscriptionPlans: isAdmin
     .output(z.array(subscriptionPlanWithClientsSchema))
@@ -314,6 +329,8 @@ export const billingRouter = router({
 
   /**
    * Create a new subscription plan
+   * ADMIN: Can create subscription plans (system administration)
+   * SE: Not allowed - subscription plan management is system administration
    */
   createSubscriptionPlan: isAdmin
     .input(createSubscriptionPlanSchema)
@@ -359,6 +376,8 @@ export const billingRouter = router({
 
   /**
    * Update a subscription plan
+   * ADMIN: Can update subscription plans (system administration)
+   * SE: Not allowed - subscription plan management is system administration
    */
   updateSubscriptionPlan: isAdmin
     .input(updateSubscriptionPlanSchema)
@@ -405,6 +424,8 @@ export const billingRouter = router({
 
   /**
    * Delete a subscription plan (only if no organizations are using it)
+   * ADMIN: Can delete subscription plans (system administration)
+   * SE: Not allowed - subscription plan management is system administration
    */
   deleteSubscriptionPlan: isAdmin
     .input(z.object({ id: z.string() }))

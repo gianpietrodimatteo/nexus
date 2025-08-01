@@ -1,15 +1,18 @@
 import { router } from '../index'
-import { isAdmin } from './_helpers'
+import { isAdmin, isAdminOrSE } from './_helpers'
 
 /**
- * Admin organizations procedures for managing organizations.
- * All procedures require ADMIN role.
+ * Organizations procedures for managing organizations.
+ * ADMIN: Can list all organizations
+ * SE: Can list their assigned organizations (automatically filtered by RBAC guard)
  */
-export const adminOrganizationsRouter = router({
+export const organizationsRouter = router({
   /**
-   * List all organizations for dropdowns and selection
+   * List organizations for dropdowns and selection
+   * ADMIN: Can list all organizations
+   * SE: Can list their assigned organizations (automatically filtered by RBAC guard)
    */
-  list: isAdmin.query(async ({ ctx }) => {
+  list: isAdminOrSE.query(async ({ ctx }) => {
     const organizations = await ctx.prisma.organization.findMany({
       select: {
         id: true,

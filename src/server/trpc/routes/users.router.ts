@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { router } from '../index'
-import { isAdmin } from './_helpers'
+import { isAdmin, isAdminOrSE } from './_helpers'
 import {
   createUserSchema,
   updateUserSchema,
@@ -12,13 +12,16 @@ import bcrypt from 'bcryptjs'
 
 /**
  * Users procedures for managing all user types (ADMIN, SE, CLIENT).
- * All procedures require ADMIN role.
+ * ADMIN: Full access to all users across all organizations
+ * SE: Access to users within their assigned organizations (automatically filtered by RBAC guard)
  */
 export const usersRouter = router({
   /**
    * List users with optional filtering by role, organization, and search
+   * ADMIN: Can see all users across all organizations
+   * SE: Can see users in their assigned organizations (automatically filtered by RBAC guard)
    */
-  list: isAdmin
+  list: isAdminOrSE
     .input(userListFilterSchema)
     .query(async ({ input, ctx }) => {
       const { role, organizationId, search, billingAccess, adminAccess } = input
@@ -80,8 +83,10 @@ export const usersRouter = router({
 
   /**
    * Get a single user by ID
+   * ADMIN: Can get any user
+   * SE: Can get users in their assigned organizations (automatically filtered by RBAC guard)
    */
-  get: isAdmin
+  get: isAdminOrSE
     .input(getUserByIdSchema)
     .query(async ({ input, ctx }) => {
       const user = await ctx.prisma.user.findUnique({
@@ -116,10 +121,38 @@ export const usersRouter = router({
 
   /**
    * Create a new user (ADMIN, SE, or CLIENT)
+   * ADMIN: Can create any user type in any organization
+   * SE: Can only create CLIENT users in their assigned organizations
    */
-  create: isAdmin
+  create: isAdminOrSE
     .input(createUserSchema)
     .mutation(async ({ input, ctx }) => {
+      // SE business rule validation: SEs can only create CLIENT users in assigned organizations
+      if (ctx.session.user.role === 'SE') {
+        if (input.role !== 'CLIENT') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Solutions Engineers can only create CLIENT users',
+          })
+        }
+        
+        if (input.organizationId) {
+          // Verify the organizationId is in SE's assigned organizations
+          const isAssigned = await ctx.prisma.organization.findFirst({
+            where: {
+              id: input.organizationId,
+              assignedSEs: { some: { id: ctx.session.user.id } }
+            }
+          })
+          
+          if (!isAssigned) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'You can only create users in organizations assigned to you',
+            })
+          }
+        }
+      }
       const {
         password,
         assignedOrganizationIds,
@@ -210,10 +243,54 @@ export const usersRouter = router({
 
   /**
    * Update an existing user
+   * ADMIN: Can update any user
+   * SE: Can update CLIENT users in their assigned organizations (cannot change role)
    */
-  update: isAdmin
+  update: isAdminOrSE
     .input(updateUserSchema)
     .mutation(async ({ input, ctx }) => {
+      // SE business rule validation: SEs can only update CLIENT users and cannot change roles
+      if (ctx.session.user.role === 'SE') {
+        // Check if the user being updated exists and is accessible to this SE
+        const existingUser = await ctx.prisma.user.findFirst({
+          where: {
+            id: input.id,
+            organization: {
+              assignedSEs: { some: { id: ctx.session.user.id } }
+            }
+          }
+        })
+        
+        if (!existingUser) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'User not found or not accessible',
+          })
+        }
+        
+        if (existingUser.role !== 'CLIENT') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Solutions Engineers can only update CLIENT users',
+          })
+        }
+        
+        // Prevent role changes by SEs
+        if (input.role && input.role !== existingUser.role) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Solutions Engineers cannot change user roles',
+          })
+        }
+        
+        // Prevent SE-specific field changes
+        if (input.hourlyRateCost !== undefined || input.hourlyRateBillable !== undefined) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Solutions Engineers cannot modify SE-specific fields',
+          })
+        }
+      }
       const {
         id,
         assignedOrganizationIds,
@@ -319,8 +396,10 @@ export const usersRouter = router({
 
   /**
    * Delete a user
+   * ADMIN: Can delete any user (except themselves)
+   * SE: Can delete CLIENT users in their assigned organizations
    */
-  delete: isAdmin
+  delete: isAdminOrSE
     .input(deleteUserSchema)
     .mutation(async ({ input, ctx }) => {
       const { id } = input
@@ -328,6 +407,9 @@ export const usersRouter = router({
       // Check if user exists
       const existingUser = await ctx.prisma.user.findUnique({
         where: { id },
+        include: {
+          organization: true,
+        },
       })
 
       if (!existingUser) {
@@ -337,7 +419,34 @@ export const usersRouter = router({
         })
       }
 
-      // Prevent deletion of the current admin user
+      // SE business rule validation: SEs can only delete CLIENT users in assigned organizations
+      if (ctx.session.user.role === 'SE') {
+        if (existingUser.role !== 'CLIENT') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Solutions Engineers can only delete CLIENT users',
+          })
+        }
+        
+        if (existingUser.organizationId) {
+          // Verify the user's organization is assigned to this SE
+          const isAssigned = await ctx.prisma.organization.findFirst({
+            where: {
+              id: existingUser.organizationId,
+              assignedSEs: { some: { id: ctx.session.user.id } }
+            }
+          })
+          
+          if (!isAssigned) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'You can only delete users in organizations assigned to you',
+            })
+          }
+        }
+      }
+
+      // Prevent deletion of the current user
       if (id === ctx.session.user.id) {
         throw new TRPCError({
           code: 'BAD_REQUEST',

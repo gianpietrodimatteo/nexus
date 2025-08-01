@@ -1,17 +1,20 @@
 import { router } from '../index'
-import { isAdmin } from './_helpers'
+import { isAdmin, isAdminOrSE } from './_helpers'
 import { createWorkflowSchema, updateWorkflowMetricsSchema, toggleWorkflowStatusSchema } from '@/schemas/workflow'
 import { organizationIdSchema } from '@/schemas/common'
 
 /**
  * Workflows procedures for managing workflows.
- * All procedures require ADMIN role.
+ * ADMIN: Full access to workflows across all organizations
+ * SE: Can manage workflows in their assigned organizations (automatically filtered by RBAC guard)
  */
 export const workflowsRouter = router({
   /**
    * Create a new workflow
+   * ADMIN: Can create workflows in any organization
+   * SE: Can create workflows in their assigned organizations (automatically filtered by RBAC guard)
    */
-  create: isAdmin
+  create: isAdminOrSE
     .input(createWorkflowSchema)
     .mutation(async ({ input, ctx }) => {
       const workflow = await ctx.prisma.workflow.create({
@@ -45,8 +48,10 @@ export const workflowsRouter = router({
 
   /**
    * Update workflow performance metrics
+   * ADMIN: Can update metrics for workflows in any organization
+   * SE: Can update metrics for workflows in their assigned organizations (automatically filtered by RBAC guard)
    */
-  updateMetrics: isAdmin
+  updateMetrics: isAdminOrSE
     .input(updateWorkflowMetricsSchema)
     .mutation(async ({ input, ctx }) => {
       const workflow = await ctx.prisma.workflow.update({
@@ -75,8 +80,10 @@ export const workflowsRouter = router({
 
   /**
    * Toggle workflow active status
+   * ADMIN: Can toggle status for workflows in any organization
+   * SE: Can toggle status for workflows in their assigned organizations (automatically filtered by RBAC guard)
    */
-  toggleStatus: isAdmin
+  toggleStatus: isAdminOrSE
     .input(toggleWorkflowStatusSchema)
     .mutation(async ({ input, ctx }) => {
       const workflow = await ctx.prisma.workflow.update({

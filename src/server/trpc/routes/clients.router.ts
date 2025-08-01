@@ -1,16 +1,19 @@
 import { router } from '../index'
-import { isAdmin } from './_helpers'
+import { isAdmin, isAdminOrSE } from './_helpers'
 import { organizationIdSchema } from '@/schemas/common'
 
 /**
- * Admin clients procedures for managing client organizations and their data.
- * All procedures require ADMIN role.
+ * Client organization procedures for managing client organizations and their data.
+ * ADMIN: Full access to all client organizations
+ * SE: Access to their assigned client organizations (automatically filtered by RBAC guard)
  */
-export const adminClientsRouter = router({
+export const clientsRouter = router({
   /**
    * Get organization details with assigned support engineers
+   * ADMIN: Can get any organization
+   * SE: Can get their assigned organizations (automatically filtered by RBAC guard)
    */
-  getOrganization: isAdmin
+  getOrganization: isAdminOrSE
     .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const organization = await ctx.prisma.organization.findUniqueOrThrow({
@@ -38,8 +41,10 @@ export const adminClientsRouter = router({
 
   /**
    * Get document links for an organization
+   * ADMIN: Can get document links for any organization
+   * SE: Can get document links for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getDocumentLinks: isAdmin
+  getDocumentLinks: isAdminOrSE
     .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const documentLinks = await ctx.prisma.documentLink.findMany({
@@ -52,8 +57,10 @@ export const adminClientsRouter = router({
 
   /**
    * Get pipeline progress for an organization
+   * ADMIN: Can get pipeline progress for any organization
+   * SE: Can get pipeline progress for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getPipelineProgress: isAdmin
+  getPipelineProgress: isAdminOrSE
     .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const organization = await ctx.prisma.organization.findUniqueOrThrow({
@@ -76,8 +83,10 @@ export const adminClientsRouter = router({
 
   /**
    * Get workflows for an organization
+   * ADMIN: Can get workflows for any organization
+   * SE: Can get workflows for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getWorkflows: isAdmin
+  getWorkflows: isAdminOrSE
     .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const workflows = await ctx.prisma.workflow.findMany({
@@ -103,8 +112,10 @@ export const adminClientsRouter = router({
 
   /**
    * Get client users for an organization
+   * ADMIN: Can get client users for any organization
+   * SE: Can get client users for their assigned organizations (automatically filtered by RBAC guard)
    */
-  getClientUsers: isAdmin
+  getClientUsers: isAdminOrSE
     .input(organizationIdSchema)
     .query(async ({ input, ctx }) => {
       const users = await ctx.prisma.user.findMany({

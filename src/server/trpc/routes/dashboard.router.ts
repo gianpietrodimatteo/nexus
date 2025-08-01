@@ -1,7 +1,7 @@
 import { router } from '../index'
 
 /**
- * Admin dashboard procedures.
+ * Dashboard procedures for admin and SE users.
  * To be implemented.
  */
-export const adminDashboardRouter = router({})
+export const dashboardRouter = router({})

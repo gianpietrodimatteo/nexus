@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { createTRPCRouter } from '../index'
-import { isAdmin, isSE, isClient } from './_helpers'
+import { router, protectedProcedure } from '../index'
+import { isAdminOrSE } from './_helpers'
 import {
   createExceptionSchema,
   updateExceptionStatusSchema,
@@ -9,42 +9,26 @@ import {
   ExceptionStatusSchema,
 } from '@/schemas/exception'
 
-export const exceptionsRouter = createTRPCRouter({
+export const exceptionsRouter = router({
   /**
    * List exceptions with filters and pagination
-   * Admin: Can see all exceptions across all organizations
-   * SE: Can see exceptions for their assigned organizations  
-   * Client: Can only see exceptions for their organization
+   * ADMIN: Can see all exceptions across all organizations
+   * SE: Can see exceptions for their assigned organizations (automatically filtered by RBAC guard)
+   * CLIENT: Can only see exceptions for their organization (automatically filtered by RBAC guard)
    */
-  list: isClient
+  list: protectedProcedure
     .input(listExceptionsSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize, sortBy, sortOrder, filters } = input
       const skip = (page - 1) * pageSize
 
-      // Build where clause based on user role
+      // Build where clause - RBAC guard automatically handles organization filtering
       let whereClause: any = {}
 
-      if (ctx.user.role === 'ADMIN') {
-        // Admin can filter by any organization
-        if (filters?.organizationId) {
-          whereClause.organizationId = filters.organizationId
-        }
-      } else if (ctx.user.role === 'SE') {
-        // SE can only see exceptions for assigned organizations
-        const assignedOrgIds = ctx.user.assignedOrganizations?.map(org => org.id) || []
-        whereClause.organizationId = { in: assignedOrgIds }
-        
-        // If filtering by specific org, ensure SE has access to it
-        if (filters?.organizationId && assignedOrgIds.includes(filters.organizationId)) {
-          whereClause.organizationId = filters.organizationId
-        }
-      } else {
-        // Client can only see their organization's exceptions
-        whereClause.organizationId = ctx.user.organizationId
+      // Apply user-provided filters (organization filtering handled automatically by RBAC guard)
+      if (filters?.organizationId) {
+        whereClause.organizationId = filters.organizationId
       }
-
-      // Apply additional filters
       if (filters?.type) {
         whereClause.type = filters.type
       }
@@ -124,20 +108,17 @@ export const exceptionsRouter = createTRPCRouter({
 
   /**
    * Get single exception by ID with full details
+   * ADMIN: Can get any exception
+   * SE: Can get exceptions for their assigned organizations (automatically filtered by RBAC guard)
+   * CLIENT: Can only get exceptions for their organization (automatically filtered by RBAC guard)
    */
-  getById: isClient
+  getById: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const exception = await ctx.prisma.exception.findFirst({
         where: {
           id: input.id,
-          // Apply same access control as list
-          ...(ctx.user.role === 'ADMIN' 
-            ? {} 
-            : ctx.user.role === 'SE'
-            ? { organizationId: { in: ctx.user.assignedOrganizations?.map(org => org.id) || [] } }
-            : { organizationId: ctx.user.organizationId }
-          ),
+          // RBAC guard automatically handles organization filtering
         },
         include: {
           workflow: {
@@ -185,22 +166,18 @@ export const exceptionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Update exception status (Admin and SE only)
+   * Update exception status
+   * ADMIN: Can update any exception
+   * SE: Can update exceptions for their assigned organizations (automatically filtered by RBAC guard)
    */
-  updateStatus: isSE
+  updateStatus: isAdminOrSE
     .input(updateExceptionStatusSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, status, remedy } = input
 
-      // Check access permissions
+      // Check if exception exists (RBAC guard automatically filters by organization)
       const existingException = await ctx.prisma.exception.findFirst({
-        where: {
-          id,
-          ...(ctx.user.role === 'ADMIN' 
-            ? {} 
-            : { organizationId: { in: ctx.user.assignedOrganizations?.map(org => org.id) || [] } }
-          ),
-        },
+        where: { id },
       })
 
       if (!existingException) {
@@ -251,8 +228,10 @@ export const exceptionsRouter = createTRPCRouter({
 
   /**
    * Create a new exception (typically from workflow execution)
+   * ADMIN: Can create exceptions for any organization
+   * SE: Can create exceptions for workflows in their assigned organizations (automatically filtered by RBAC guard)
    */
-  create: isAdmin
+  create: isAdminOrSE
     .input(createExceptionSchema)
     .mutation(async ({ ctx, input }) => {
       const exception = await ctx.prisma.exception.create({
@@ -288,22 +267,18 @@ export const exceptionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Send notifications for an exception (Admin and SE only)
+   * Send notifications for an exception
+   * ADMIN: Can send notifications for any exception
+   * SE: Can send notifications for exceptions in their assigned organizations (automatically filtered by RBAC guard)
    */
-  sendNotifications: isSE
+  sendNotifications: isAdminOrSE
     .input(sendExceptionNotificationSchema)
     .mutation(async ({ ctx, input }) => {
       const { exceptionId, userIds, methods, message } = input
 
-      // Verify access to exception
+      // Verify exception exists (RBAC guard automatically filters by organization)
       const exception = await ctx.prisma.exception.findFirst({
-        where: {
-          id: exceptionId,
-          ...(ctx.user.role === 'ADMIN' 
-            ? {} 
-            : { organizationId: { in: ctx.user.assignedOrganizations?.map(org => org.id) || [] } }
-          ),
-        },
+        where: { id: exceptionId },
         include: {
           workflow: { select: { name: true } },
           organization: { select: { name: true } },
@@ -380,28 +355,23 @@ export const exceptionsRouter = createTRPCRouter({
 
   /**
    * Get exception statistics (for dashboard widgets)
+   * ADMIN: Can get stats for any organization or all organizations
+   * SE: Can get stats for their assigned organizations (automatically filtered by RBAC guard)
+   * CLIENT: Can get stats for their organization (automatically filtered by RBAC guard)
    */
-  getStats: isSE
+  getStats: protectedProcedure
     .input(z.object({
       organizationId: z.string().cuid().optional(),
       dateFrom: z.date().optional(),
       dateTo: z.date().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      // Build where clause based on user role and input
+      // Build where clause - RBAC guard automatically handles organization filtering
       let whereClause: any = {}
 
-      if (ctx.user.role === 'ADMIN') {
-        if (input.organizationId) {
-          whereClause.organizationId = input.organizationId
-        }
-      } else if (ctx.user.role === 'SE') {
-        const assignedOrgIds = ctx.user.assignedOrganizations?.map(org => org.id) || []
-        whereClause.organizationId = input.organizationId && assignedOrgIds.includes(input.organizationId)
-          ? input.organizationId
-          : { in: assignedOrgIds }
-      } else {
-        whereClause.organizationId = ctx.user.organizationId
+      // Apply user-provided organization filter (RBAC guard will ensure access)
+      if (input.organizationId) {
+        whereClause.organizationId = input.organizationId
       }
 
       // Apply date filters
