@@ -40,9 +40,9 @@ export const exceptionSchema = z.object({
   severity: ExceptionSeveritySchema,
   status: ExceptionStatusSchema,
   remedy: z.string().nullable(),
-  workflowId: z.string().cuid(),
-  organizationId: z.string().cuid(),
-  departmentId: z.string().cuid().nullable(),
+  workflowId: z.string(),
+  organizationId: z.string(),
+  departmentId: z.string().nullable(),
   reportedAt: z.date(),
   resolvedAt: z.date().nullable(),
 })
@@ -68,8 +68,8 @@ export const createExceptionSchema = z.object({
   type: ExceptionTypeSchema,
   severity: ExceptionSeveritySchema,
   remedy: z.string().optional(),
-  workflowId: z.string().cuid(),
-  departmentId: z.string().cuid().optional(),
+  workflowId: z.string(),
+  departmentId: z.string().optional(),
 })
 
 /**
@@ -85,7 +85,7 @@ export const updateExceptionStatusSchema = z.object({
  * Schema for exception filters
  */
 export const exceptionFiltersSchema = z.object({
-  organizationId: z.string().cuid().optional(), // Admin can filter by client
+  organizationId: z.string().optional(), // Admin can filter by client
   type: ExceptionTypeSchema.optional(),
   severity: ExceptionSeveritySchema.optional(),
   status: ExceptionStatusSchema.optional(),
