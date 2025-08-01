@@ -52,7 +52,7 @@ const getNavData = (userRole?: string) => {
     },
     {
       title: "Exceptions",
-      url: "#",
+      url: "/admin/exceptions",
       icon: ExceptionsIcon,
     },
   ]
