@@ -10,13 +10,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { 
   MoreHorizontal, 
   Pencil, 
   Trash2,
-  DollarSign,
-  Users,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -80,36 +77,60 @@ export function SubscriptionPlansTable({
     return `${value}%`
   }
 
-  const getBadgeVariant = (value: string) => {
-    switch (value) {
-      case 'CONSUMPTION':
-        return 'default'
-      case 'MONTHLY':
-        return 'secondary'
-      case 'QUARTERLY':
-        return 'outline'
+  const formatContractLength = (length: string) => {
+    switch (length) {
+      case 'MONTH':
+        return '1 month'
+      case 'QUARTER':
+        return '3 months'
       case 'YEAR':
-        return 'destructive'
+        return '12 months'
       default:
-        return 'default'
+        return length
+    }
+  }
+
+  const formatPricingModel = (model: string) => {
+    switch (model) {
+      case 'TIERED':
+        return 'Tiered'
+      case 'FIXED':
+        return 'Fixed'
+      case 'USAGE':
+        return 'Usage'
+      case 'CONSUMPTION':
+        return 'Consumption'
+      default:
+        return model
+    }
+  }
+
+  const formatBillingCadence = (cadence: string) => {
+    switch (cadence) {
+      case 'MONTHLY':
+        return 'Monthly'
+      case 'QUARTERLY':
+        return 'Quarterly'
+      default:
+        return cadence
     }
   }
 
   return (
     <>
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-[#E9E7E4] rounded-xl overflow-hidden shadow-sm bg-white">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Pricing Model</TableHead>
-              <TableHead className="font-semibold">Contract Length</TableHead>
-              <TableHead className="font-semibold">Billing Cadence</TableHead>
-              <TableHead className="font-semibold">Setup Fee</TableHead>
-              <TableHead className="font-semibold">Prepayment %</TableHead>
-              <TableHead className="font-semibold">$ Cap</TableHead>
-              <TableHead className="font-semibold">Overage Cost</TableHead>
-              <TableHead className="font-semibold"># Clients</TableHead>
+            <TableRow className="bg-[#EFEAEA] border-b border-[#E5E7EB] hover:bg-[#EFEAEA]">
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">Name</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">Pricing Model</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">Contract Length</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">Billing Cadence</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">Setup Fee</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">Prepayment %</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">$ Cap</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4">Overage Cost</TableHead>
+              <TableHead className="font-normal text-[#141417] text-sm h-[52px] px-4"># Clients</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
@@ -124,55 +145,33 @@ export function SubscriptionPlansTable({
               data.map((plan) => (
                 <TableRow 
                   key={plan.id}
-                  className="hover:bg-muted/50 cursor-pointer"
+                  className="hover:bg-gray-50 cursor-pointer border-b border-[#E9E7E4] h-14"
                   onClick={() => setEditingPlan(plan)}
                 >
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={getBadgeVariant(plan.pricingModel)}>
-                      {plan.pricingModel}
-                    </Badge>
+                  <TableCell className="text-[#1F2937] text-base px-4">{plan.name}</TableCell>
+                  <TableCell className="text-[#1F2937] text-base px-4">
+                    {formatPricingModel(plan.pricingModel)}
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={getBadgeVariant(plan.contractLength)}>
-                      {plan.contractLength}
-                    </Badge>
+                  <TableCell className="text-[#1F2937] text-base px-4">
+                    {formatContractLength(plan.contractLength)}
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={getBadgeVariant(plan.billingCadence)}>
-                      {plan.billingCadence}
-                    </Badge>
+                  <TableCell className="text-[#1F2937] text-base px-4">
+                    {formatBillingCadence(plan.billingCadence)}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      {formatCurrency(plan.setupFee)}
-                    </div>
+                  <TableCell className="text-[#1F2937] text-base px-4">
+                    {formatCurrency(plan.setupFee)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-[#1F2937] text-base px-4">
                     {formatPercentage(plan.prepaymentPercentage)}
                   </TableCell>
-                  <TableCell>
-                    {plan.capAmount ? (
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-3 w-3 text-muted-foreground" />
-                        {formatCurrency(plan.capAmount)}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">No cap</span>
-                    )}
+                  <TableCell className="text-[#1F2937] text-base px-4">
+                    {plan.capAmount ? formatCurrency(plan.capAmount) : 'No cap'}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      {formatCurrency(plan.overageCost)}
-                    </div>
+                  <TableCell className="text-[#1F2937] text-base px-4">
+                    {formatCurrency(plan.overageCost)}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3 text-muted-foreground" />
-                      {plan.clientCount}
-                    </div>
+                  <TableCell className="text-[#1F2937] text-base px-4">
+                    {plan.clientCount}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

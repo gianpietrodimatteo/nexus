@@ -41,7 +41,7 @@ export const invoiceStatusSchema = z.enum([
 /**
  * Pricing model enum
  */
-export const pricingModelSchema = z.enum(['CONSUMPTION'])
+export const pricingModelSchema = z.enum(['TIERED', 'FIXED', 'USAGE', 'CONSUMPTION'])
 
 /**
  * Contract length enum
@@ -63,7 +63,7 @@ export const productUsageAPISchema = z.enum(['AIR_DIRECT', 'NEXUS_BASE'])
  */
 export const createSubscriptionPlanSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
-  pricingModel: pricingModelSchema.default('CONSUMPTION'),
+  pricingModel: pricingModelSchema.default('TIERED'),
   contractLength: contractLengthSchema,
   billingCadence: billingCadenceSchema,
   setupFee: z.number().min(0, 'Setup fee must be non-negative').default(0),

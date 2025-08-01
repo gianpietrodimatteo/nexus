@@ -48,8 +48,8 @@ export function AddPlanModal({ isOpen, onClose, onSuccess }: AddPlanModalProps) 
     resolver: zodResolver(createSubscriptionPlanSchema),
     defaultValues: {
       name: '',
-      pricingModel: 'CONSUMPTION',
-      contractLength: 'MONTH',
+      pricingModel: 'TIERED',
+      contractLength: 'YEAR',
       billingCadence: 'MONTHLY',
       setupFee: 0,
       prepaymentPercentage: 0,
@@ -127,6 +127,9 @@ export function AddPlanModal({ isOpen, onClose, onSuccess }: AddPlanModalProps) 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="TIERED">Tiered</SelectItem>
+                        <SelectItem value="FIXED">Fixed</SelectItem>
+                        <SelectItem value="USAGE">Usage</SelectItem>
                         <SelectItem value="CONSUMPTION">Consumption</SelectItem>
                       </SelectContent>
                     </Select>
@@ -170,9 +173,9 @@ export function AddPlanModal({ isOpen, onClose, onSuccess }: AddPlanModalProps) 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="MONTH">Month</SelectItem>
-                        <SelectItem value="QUARTER">Quarter</SelectItem>
-                        <SelectItem value="YEAR">Year</SelectItem>
+                        <SelectItem value="MONTH">1 Month</SelectItem>
+                        <SelectItem value="QUARTER">3 Months</SelectItem>
+                        <SelectItem value="YEAR">12 Months</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

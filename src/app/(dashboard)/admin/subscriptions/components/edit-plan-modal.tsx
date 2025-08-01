@@ -142,6 +142,9 @@ export function EditPlanModal({ plan, isOpen, onClose, onSuccess }: EditPlanModa
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="TIERED">Tiered</SelectItem>
+                        <SelectItem value="FIXED">Fixed</SelectItem>
+                        <SelectItem value="USAGE">Usage</SelectItem>
                         <SelectItem value="CONSUMPTION">Consumption</SelectItem>
                       </SelectContent>
                     </Select>
@@ -185,9 +188,9 @@ export function EditPlanModal({ plan, isOpen, onClose, onSuccess }: EditPlanModa
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="MONTH">Month</SelectItem>
-                        <SelectItem value="QUARTER">Quarter</SelectItem>
-                        <SelectItem value="YEAR">Year</SelectItem>
+                        <SelectItem value="MONTH">1 Month</SelectItem>
+                        <SelectItem value="QUARTER">3 Months</SelectItem>
+                        <SelectItem value="YEAR">12 Months</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

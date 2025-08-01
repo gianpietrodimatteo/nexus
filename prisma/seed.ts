@@ -9,49 +9,211 @@ async function main() {
   // Hash password for all users (password: "password123")
   const hashedPassword = await bcrypt.hash('password123', 12)
 
-  // Create subscription plans first
-  const enterprisePlan = await prisma.subscriptionPlan.upsert({
-    where: { id: 'enterprise-plan' },
+  // Create subscription plans to match Figma design
+  const enterpriseProPlan = await prisma.subscriptionPlan.upsert({
+    where: { id: 'enterprise-pro-plan' },
     update: {},
     create: {
-      id: 'enterprise-plan',
-      name: 'Enterprise',
-      pricingModel: PricingModel.CONSUMPTION,
+      id: 'enterprise-pro-plan',
+      name: 'Enterprise Pro',
+      pricingModel: PricingModel.TIERED,
       contractLength: ContractLength.YEAR,
       billingCadence: BillingCadence.MONTHLY,
-      setupFee: 1000,
-      prepaymentPercentage: 0,
-      capAmount: 50000,
-      overageCost: 100,
-      creditsPerPeriod: 10000, // 10,000 credits per month
-      pricePerCredit: 0.20, // $0.20 per credit
+      setupFee: 5000,
+      prepaymentPercentage: 25,
+      capAmount: 100000,
+      overageCost: 150,
+      creditsPerPeriod: 10000,
+      pricePerCredit: 0.20,
       productUsageAPI: ProductUsageAPI.NEXUS_BASE
     }
   })
 
-  // Create test organization
-  const testOrg = await prisma.organization.upsert({
-    where: { id: 'test-org-1' },
+  const businessPlusPlan = await prisma.subscriptionPlan.upsert({
+    where: { id: 'business-plus-plan' },
     update: {},
     create: {
-      id: 'test-org-1',
-      name: 'Acme Corporation',
-      url: 'https://acme.com',
-      contractStartDate: new Date('2024-01-01'),
-      contractEndDate: new Date('2025-05-01'), // Contract renewal date matching the UI
-      pipelinePhase: PipelinePhase.TESTING_STARTED,
-      subscriptionPlanId: enterprisePlan.id
+      id: 'business-plus-plan',
+      name: 'Business Plus',
+      pricingModel: PricingModel.FIXED,
+      contractLength: ContractLength.QUARTER, // Note: Figma shows "6 months" but QUARTER = 3 months
+      billingCadence: BillingCadence.QUARTERLY,
+      setupFee: 2500,
+      prepaymentPercentage: 15,
+      capAmount: 50000,
+      overageCost: 125,
+      creditsPerPeriod: 5000,
+      pricePerCredit: 0.15,
+      productUsageAPI: ProductUsageAPI.NEXUS_BASE
     }
   })
 
-  // Create department
-  const engineeringDept = await prisma.department.upsert({
-    where: { id: 'eng-dept-1' },
+  const starterPlan = await prisma.subscriptionPlan.upsert({
+    where: { id: 'starter-plan' },
     update: {},
     create: {
-      id: 'eng-dept-1',
+      id: 'starter-plan',
+      name: 'Starter',
+      pricingModel: PricingModel.USAGE,
+      contractLength: ContractLength.QUARTER,
+      billingCadence: BillingCadence.MONTHLY,
+      setupFee: 1000,
+      prepaymentPercentage: 10,
+      capAmount: 25000,
+      overageCost: 100,
+      creditsPerPeriod: 2500,
+      pricePerCredit: 0.10,
+      productUsageAPI: ProductUsageAPI.NEXUS_BASE
+    }
+  })
+
+  // Create a few well-connected organizations per plan
+  
+  // Enterprise Pro plan organizations (3 realistic clients)
+  const acmeCorp = await prisma.organization.upsert({
+    where: { id: 'acme-corp' },
+    update: {},
+    create: {
+      id: 'acme-corp',
+      name: 'Acme Corporation',
+      url: 'https://acme.com',
+      contractStartDate: new Date('2024-01-01'),
+      contractEndDate: new Date('2025-05-01'),
+      pipelinePhase: PipelinePhase.TESTING_STARTED,
+      subscriptionPlanId: enterpriseProPlan.id
+    }
+  })
+
+  const techCorp = await prisma.organization.upsert({
+    where: { id: 'tech-corp' },
+    update: {},
+    create: {
+      id: 'tech-corp',
+      name: 'TechCorp Industries',
+      url: 'https://techcorp.com',
+      contractStartDate: new Date('2024-02-15'),
+      contractEndDate: new Date('2025-02-15'),
+      pipelinePhase: PipelinePhase.PRODUCTION_DEPLOY,
+      subscriptionPlanId: enterpriseProPlan.id
+    }
+  })
+
+  const globalSys = await prisma.organization.upsert({
+    where: { id: 'global-systems' },
+    update: {},
+    create: {
+      id: 'global-systems',
+      name: 'Global Systems Ltd',
+      url: 'https://globalsystems.com',
+      contractStartDate: new Date('2023-11-01'),
+      contractEndDate: new Date('2024-11-01'),
+      pipelinePhase: PipelinePhase.TESTING_STARTED,
+      subscriptionPlanId: enterpriseProPlan.id
+    }
+  })
+
+  // Business Plus plan organizations (2 realistic clients)
+  const midTechSolutions = await prisma.organization.upsert({
+    where: { id: 'midtech-solutions' },
+    update: {},
+    create: {
+      id: 'midtech-solutions',
+      name: 'MidTech Solutions',
+      url: 'https://midtechsolutions.com',
+      contractStartDate: new Date('2024-03-01'),
+      contractEndDate: new Date('2024-09-01'),
+      pipelinePhase: PipelinePhase.PRODUCTION_DEPLOY,
+      subscriptionPlanId: businessPlusPlan.id
+    }
+  })
+
+  const quickStart = await prisma.organization.upsert({
+    where: { id: 'quickstart-inc' },
+    update: {},
+    create: {
+      id: 'quickstart-inc',
+      name: 'QuickStart Inc',
+      url: 'https://quickstart.com',
+      contractStartDate: new Date('2024-04-01'),
+      contractEndDate: new Date('2024-10-01'),
+      pipelinePhase: PipelinePhase.FACTORY_BUILD,
+      subscriptionPlanId: businessPlusPlan.id
+    }
+  })
+
+  // Starter plan organizations (2 realistic clients)
+  const smallBiz = await prisma.organization.upsert({
+    where: { id: 'small-biz' },
+    update: {},
+    create: {
+      id: 'small-biz',
+      name: 'SmallBiz Co',
+      url: 'https://smallbiz.com',
+      contractStartDate: new Date('2024-05-01'),
+      contractEndDate: new Date('2024-08-01'),
+      pipelinePhase: PipelinePhase.DISCOVERY_DEEP_DIVE,
+      subscriptionPlanId: starterPlan.id
+    }
+  })
+
+  const startupOne = await prisma.organization.upsert({
+    where: { id: 'startup-one' },
+    update: {},
+    create: {
+      id: 'startup-one',
+      name: 'Startup One',
+      url: 'https://startupone.com',
+      contractStartDate: new Date('2024-06-01'),
+      contractEndDate: new Date('2024-09-01'),
+      pipelinePhase: PipelinePhase.ADA_PROPOSAL_SENT,
+      subscriptionPlanId: starterPlan.id
+    }
+  })
+
+  // Use Acme Corp as the main test org
+  const testOrg = acmeCorp
+
+  // Store all orgs for later reference
+  const allOrgs = [acmeCorp, techCorp, globalSys, midTechSolutions, quickStart, smallBiz, startupOne]
+
+  // Create departments for multiple organizations
+  const acmeEngDept = await prisma.department.upsert({
+    where: { id: 'acme-eng-dept' },
+    update: {},
+    create: {
+      id: 'acme-eng-dept',
       name: 'Engineering',
-      organizationId: testOrg.id
+      organizationId: acmeCorp.id
+    }
+  })
+
+  const acmeMarketingDept = await prisma.department.upsert({
+    where: { id: 'acme-marketing-dept' },
+    update: {},
+    create: {
+      id: 'acme-marketing-dept',
+      name: 'Marketing',
+      organizationId: acmeCorp.id
+    }
+  })
+
+  const techCorpItDept = await prisma.department.upsert({
+    where: { id: 'techcorp-it-dept' },
+    update: {},
+    create: {
+      id: 'techcorp-it-dept',
+      name: 'IT Operations',
+      organizationId: techCorp.id
+    }
+  })
+
+  const midTechDevDept = await prisma.department.upsert({
+    where: { id: 'midtech-dev-dept' },
+    update: {},
+    create: {
+      id: 'midtech-dev-dept',
+      name: 'Development',
+      organizationId: midTechSolutions.id
     }
   })
 
@@ -94,20 +256,20 @@ async function main() {
     }
   })
 
-  // Create Client user
-  const clientUser = await prisma.user.upsert({
-    where: { email: 'client@acme.com' },
+  // Create Client users across different organizations
+  const acmeClientUser = await prisma.user.upsert({
+    where: { email: 'john.doe@acme.com' },
     update: {},
     create: {
-      id: 'client-user-1',
-      email: 'client@acme.com',
-      name: 'John Client',
+      id: 'acme-client-user-1',
+      email: 'john.doe@acme.com',
+      name: 'John Doe',
       phone: '+1-555-0300',
       role: UserRole.CLIENT,
-      organizationId: testOrg.id,
-      departmentId: engineeringDept.id,
+      organizationId: acmeCorp.id,
+      departmentId: acmeEngDept.id,
       billingAccess: true,
-      adminAccess: true, // Can manage other users in their org
+      adminAccess: true,
       notificationPreferences: {
         email: true,
         sms: false
@@ -116,44 +278,157 @@ async function main() {
     }
   })
 
-  // Assign SE to the test organization
-  await prisma.organization.update({
-    where: { id: testOrg.id },
+  const acmeMarketingUser = await prisma.user.upsert({
+    where: { email: 'sarah.marketing@acme.com' },
+    update: {},
+    create: {
+      id: 'acme-marketing-user-1',
+      email: 'sarah.marketing@acme.com',
+      name: 'Sarah Williams',
+      phone: '+1-555-0301',
+      role: UserRole.CLIENT,
+      organizationId: acmeCorp.id,
+      departmentId: acmeMarketingDept.id,
+      billingAccess: false,
+      adminAccess: false,
+      notificationPreferences: {
+        email: true,
+        sms: true
+      },
+      password: hashedPassword
+    }
+  })
+
+  const techCorpUser = await prisma.user.upsert({
+    where: { email: 'mike.tech@techcorp.com' },
+    update: {},
+    create: {
+      id: 'techcorp-user-1',
+      email: 'mike.tech@techcorp.com',
+      name: 'Mike Thompson',
+      phone: '+1-555-0400',
+      role: UserRole.CLIENT,
+      organizationId: techCorp.id,
+      departmentId: techCorpItDept.id,
+      billingAccess: true,
+      adminAccess: true,
+      notificationPreferences: {
+        email: true,
+        sms: false
+      },
+      password: hashedPassword
+    }
+  })
+
+  const midTechUser = await prisma.user.upsert({
+    where: { email: 'lisa.dev@midtechsolutions.com' },
+    update: {},
+    create: {
+      id: 'midtech-user-1',
+      email: 'lisa.dev@midtechsolutions.com',
+      name: 'Lisa Chen',
+      phone: '+1-555-0500',
+      role: UserRole.CLIENT,
+      organizationId: midTechSolutions.id,
+      departmentId: midTechDevDept.id,
+      billingAccess: false,
+      adminAccess: false,
+      notificationPreferences: {
+        email: true,
+        sms: false
+      },
+      password: hashedPassword
+    }
+  })
+
+  // Use the first client user as the main reference
+  const clientUser = acmeClientUser
+
+  // Assign SE to multiple organizations
+  await prisma.organization.updateMany({
+    where: { 
+      id: { 
+        in: [acmeCorp.id, techCorp.id, globalSys.id, midTechSolutions.id] 
+      } 
+    },
+    data: {}
+  })
+
+  // Connect SE to organizations using the relation
+  await prisma.user.update({
+    where: { id: seUser.id },
     data: {
-      assignedSEs: {
-        connect: { id: seUser.id }
+      assignedOrganizations: {
+        connect: [
+          { id: acmeCorp.id },
+          { id: techCorp.id },
+          { id: globalSys.id },
+          { id: midTechSolutions.id }
+        ]
       }
     }
   })
 
-  // Create some sample workflows
-  const workflow1 = await prisma.workflow.create({
+  // Create sample workflows across different organizations
+  const acmeInvoiceWorkflow = await prisma.workflow.create({
     data: {
-      id: 'workflow-1',
+      id: 'acme-invoice-workflow',
       name: 'Invoice Processing Automation',
       description: 'Automatically process incoming invoices and route for approval',
       isActive: true,
       nodeCount: 8,
       timeSavedPerExecution: 45, // 45 minutes
       moneySavedPerExecution: 112.50, // $112.50 based on 45min * $150/hr
-      organizationId: testOrg.id,
-      departmentId: engineeringDept.id
+      organizationId: acmeCorp.id,
+      departmentId: acmeEngDept.id
     }
   })
 
-  const workflow2 = await prisma.workflow.create({
+  const acmeMarketingWorkflow = await prisma.workflow.create({
     data: {
-      id: 'workflow-2',
-      name: 'Employee Onboarding',
-      description: 'Automate new employee setup across multiple systems',
+      id: 'acme-marketing-workflow',
+      name: 'Lead Generation Automation',
+      description: 'Automate lead qualification and routing',
       isActive: true,
-      nodeCount: 12,
-      timeSavedPerExecution: 120, // 2 hours
-      moneySavedPerExecution: 300, // $300 based on 2hrs * $150/hr
-      organizationId: testOrg.id,
-      departmentId: engineeringDept.id
+      nodeCount: 6,
+      timeSavedPerExecution: 30,
+      moneySavedPerExecution: 75,
+      organizationId: acmeCorp.id,
+      departmentId: acmeMarketingDept.id
     }
   })
+
+  const techCorpWorkflow = await prisma.workflow.create({
+    data: {
+      id: 'techcorp-deployment-workflow',
+      name: 'Automated Deployment Pipeline',
+      description: 'Automate code deployment across environments',
+      isActive: true,
+      nodeCount: 15,
+      timeSavedPerExecution: 90,
+      moneySavedPerExecution: 225,
+      organizationId: techCorp.id,
+      departmentId: techCorpItDept.id
+    }
+  })
+
+  const midTechWorkflow = await prisma.workflow.create({
+    data: {
+      id: 'midtech-testing-workflow',
+      name: 'QA Testing Automation',
+      description: 'Automate regression testing suite',
+      isActive: true,
+      nodeCount: 10,
+      timeSavedPerExecution: 60,
+      moneySavedPerExecution: 150,
+      organizationId: midTechSolutions.id,
+      departmentId: midTechDevDept.id
+    }
+  })
+
+  // Keep the references for the existing code
+  const workflow1 = acmeInvoiceWorkflow
+  const workflow2 = acmeMarketingWorkflow
 
   // Create some sample executions
   await prisma.execution.createMany({
