@@ -138,12 +138,21 @@ export default function AdminBillingPage() {
               {/* SE Hours This Month */}
               <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
                 <div className="text-sm text-[#757575] mb-2">SE Hours This Month</div>
-                <div className="text-xl font-semibold text-[#1F2937] mb-2">
-                  {billingOverview?.seHours.usedThisMonth || 12.5} / {billingOverview?.seHours.allocatedThisMonth || 20}
-                </div>
-                <div className="text-sm text-[#3B3B3B]">
-                  {billingOverview?.seHours.remainingThisMonth || 7.5} hours remaining
-                </div>
+                {billingOverview?.seHours ? (
+                  <>
+                    <div className="text-xl font-semibold text-[#1F2937] mb-2">
+                      {billingOverview.seHours.usedThisMonth.toFixed(2)} / {billingOverview.seHours.allocatedThisMonth.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-[#3B3B3B]">
+                      {billingOverview.seHours.remainingThisMonth.toFixed(2)} hours remaining
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-xl font-semibold text-[#1F2937] mb-2">No data</div>
+                    <div className="text-sm text-[#3B3B3B]">Hours not allocated</div>
+                  </>
+                )}
               </div>
             </div>
 
