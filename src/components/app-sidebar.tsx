@@ -47,7 +47,7 @@ const getNavData = (userRole?: string) => {
     },
     {
       title: "Subscriptions",
-      url: "#",
+      url: "/admin/subscriptions",
       icon: SubscriptionsIcon,
     },
     {

@@ -39,17 +39,68 @@ export const invoiceStatusSchema = z.enum([
 ])
 
 /**
- * Schema for subscription plans
+ * Pricing model enum
  */
-export const subscriptionPlanSchema = z.object({
+export const pricingModelSchema = z.enum(['CONSUMPTION'])
+
+/**
+ * Contract length enum
+ */
+export const contractLengthSchema = z.enum(['MONTH', 'QUARTER', 'YEAR'])
+
+/**
+ * Billing cadence enum
+ */
+export const billingCadenceSchema = z.enum(['MONTHLY', 'QUARTERLY'])
+
+/**
+ * Product usage API enum
+ */
+export const productUsageAPISchema = z.enum(['AIR_DIRECT', 'NEXUS_BASE'])
+
+/**
+ * Schema for creating subscription plans
+ */
+export const createSubscriptionPlanSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
-  description: z.string().optional(),
-  pricePerMonth: z.number().positive('Price must be positive'),
-  pricePerYear: z.number().positive('Price must be positive').optional(),
-  features: z.array(z.string()).default([]),
-  maxUsers: z.number().int().positive().optional(),
-  maxWorkflows: z.number().int().positive().optional(),
-  isActive: z.boolean().default(true),
+  pricingModel: pricingModelSchema.default('CONSUMPTION'),
+  contractLength: contractLengthSchema,
+  billingCadence: billingCadenceSchema,
+  setupFee: z.number().min(0, 'Setup fee must be non-negative').default(0),
+  prepaymentPercentage: z.number().min(0).max(100, 'Prepayment percentage must be between 0 and 100').default(0),
+  capAmount: z.number().positive('Cap amount must be positive').optional(),
+  overageCost: z.number().min(0, 'Overage cost must be non-negative').default(0),
+  creditsPerPeriod: z.number().int().min(0, 'Credits per period must be non-negative').default(0),
+  pricePerCredit: z.number().min(0, 'Price per credit must be non-negative').default(0),
+  productUsageAPI: productUsageAPISchema.default('NEXUS_BASE'),
+})
+
+/**
+ * Schema for updating subscription plans
+ */
+export const updateSubscriptionPlanSchema = createSubscriptionPlanSchema.partial().extend({
+  id: z.string().min(1, 'Plan ID is required'),
+})
+
+/**
+ * Schema for subscription plan response with client count
+ */
+export const subscriptionPlanWithClientsSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  pricingModel: pricingModelSchema,
+  contractLength: contractLengthSchema,
+  billingCadence: billingCadenceSchema,
+  setupFee: z.number(),
+  prepaymentPercentage: z.number(),
+  capAmount: z.number().nullable(),
+  overageCost: z.number(),
+  creditsPerPeriod: z.number(),
+  pricePerCredit: z.number(),
+  productUsageAPI: productUsageAPISchema,
+  clientCount: z.number(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 /**
@@ -219,7 +270,13 @@ export const applyCreditSchema = z.object({
 export type BillingStatus = z.infer<typeof billingStatusSchema>
 export type PaymentMethodType = z.infer<typeof paymentMethodTypeSchema>
 export type InvoiceStatus = z.infer<typeof invoiceStatusSchema>
-export type SubscriptionPlanInput = z.infer<typeof subscriptionPlanSchema>
+export type PricingModel = z.infer<typeof pricingModelSchema>
+export type ContractLength = z.infer<typeof contractLengthSchema>
+export type BillingCadence = z.infer<typeof billingCadenceSchema>
+export type ProductUsageAPI = z.infer<typeof productUsageAPISchema>
+export type CreateSubscriptionPlanInput = z.infer<typeof createSubscriptionPlanSchema>
+export type UpdateSubscriptionPlanInput = z.infer<typeof updateSubscriptionPlanSchema>
+export type SubscriptionPlanWithClients = z.infer<typeof subscriptionPlanWithClientsSchema>
 export type UpdateSubscriptionInput = z.infer<typeof updateSubscriptionSchema>
 export type BillingInfoInput = z.infer<typeof billingInfoSchema>
 export type PaymentMethodInput = z.infer<typeof paymentMethodSchema>

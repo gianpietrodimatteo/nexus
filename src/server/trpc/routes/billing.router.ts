@@ -6,7 +6,10 @@ import {
   billingOverviewSchema,
   usageSummarySchema,
   invoiceResponseSchema,
-  paymentMethodResponseSchema
+  paymentMethodResponseSchema,
+  createSubscriptionPlanSchema,
+  updateSubscriptionPlanSchema,
+  subscriptionPlanWithClientsSchema
 } from '@/schemas/billing'
 import { z } from 'zod'
 
@@ -268,6 +271,178 @@ export const billingRouter = router({
         })),
         total,
         hasMore: input.offset + input.limit < total,
+      }
+    }),
+
+  /**
+   * Get all subscription plans with client counts
+   */
+  getAllSubscriptionPlans: isAdmin
+    .output(z.array(subscriptionPlanWithClientsSchema))
+    .query(async ({ ctx }) => {
+      const plans = await ctx.prisma.subscriptionPlan.findMany({
+        include: {
+          _count: {
+            select: {
+              organizations: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+
+      return plans.map((plan) => ({
+        id: plan.id,
+        name: plan.name,
+        pricingModel: plan.pricingModel,
+        contractLength: plan.contractLength,
+        billingCadence: plan.billingCadence,
+        setupFee: Number(plan.setupFee),
+        prepaymentPercentage: Number(plan.prepaymentPercentage),
+        capAmount: plan.capAmount ? Number(plan.capAmount) : null,
+        overageCost: Number(plan.overageCost),
+        creditsPerPeriod: plan.creditsPerPeriod,
+        pricePerCredit: Number(plan.pricePerCredit),
+        productUsageAPI: plan.productUsageAPI,
+        clientCount: plan._count.organizations,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+      }))
+    }),
+
+  /**
+   * Create a new subscription plan
+   */
+  createSubscriptionPlan: isAdmin
+    .input(createSubscriptionPlanSchema)
+    .mutation(async ({ input, ctx }) => {
+      const plan = await ctx.prisma.subscriptionPlan.create({
+        data: {
+          name: input.name,
+          pricingModel: input.pricingModel,
+          contractLength: input.contractLength,
+          billingCadence: input.billingCadence,
+          setupFee: input.setupFee,
+          prepaymentPercentage: input.prepaymentPercentage,
+          capAmount: input.capAmount,
+          overageCost: input.overageCost,
+          creditsPerPeriod: input.creditsPerPeriod,
+          pricePerCredit: input.pricePerCredit,
+          productUsageAPI: input.productUsageAPI,
+        },
+      })
+
+      // Log the creation
+      await ctx.prisma.auditLog.create({
+        data: {
+          action: 'CREATE',
+          entityType: 'SubscriptionPlan',
+          entityId: plan.id,
+          newValues: {
+            name: input.name,
+            pricingModel: input.pricingModel,
+            contractLength: input.contractLength,
+            billingCadence: input.billingCadence,
+          },
+          userId: ctx.session.user.id,
+        },
+      })
+
+      return {
+        success: true,
+        planId: plan.id,
+        message: `Subscription plan "${input.name}" created successfully`,
+      }
+    }),
+
+  /**
+   * Update a subscription plan
+   */
+  updateSubscriptionPlan: isAdmin
+    .input(updateSubscriptionPlanSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...updateData } = input
+
+      // Get the current plan for audit logging
+      const currentPlan = await ctx.prisma.subscriptionPlan.findUniqueOrThrow({
+        where: { id },
+      })
+
+      const updatedPlan = await ctx.prisma.subscriptionPlan.update({
+        where: { id },
+        data: updateData,
+      })
+
+      // Log the update
+      await ctx.prisma.auditLog.create({
+        data: {
+          action: 'UPDATE',
+          entityType: 'SubscriptionPlan',
+          entityId: id,
+          oldValues: {
+            name: currentPlan.name,
+            pricingModel: currentPlan.pricingModel,
+            contractLength: currentPlan.contractLength,
+            billingCadence: currentPlan.billingCadence,
+            setupFee: Number(currentPlan.setupFee),
+            prepaymentPercentage: Number(currentPlan.prepaymentPercentage),
+            capAmount: currentPlan.capAmount ? Number(currentPlan.capAmount) : null,
+            overageCost: Number(currentPlan.overageCost),
+          },
+          newValues: updateData,
+          userId: ctx.session.user.id,
+        },
+      })
+
+      return {
+        success: true,
+        planId: updatedPlan.id,
+        message: `Subscription plan "${updatedPlan.name}" updated successfully`,
+      }
+    }),
+
+  /**
+   * Delete a subscription plan (only if no organizations are using it)
+   */
+  deleteSubscriptionPlan: isAdmin
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Check if any organizations are using this plan
+      const organizationsCount = await ctx.prisma.organization.count({
+        where: { subscriptionPlanId: input.id },
+      })
+
+      if (organizationsCount > 0) {
+        throw new Error(`Cannot delete plan: ${organizationsCount} organization(s) are currently using this plan`)
+      }
+
+      const plan = await ctx.prisma.subscriptionPlan.findUniqueOrThrow({
+        where: { id: input.id },
+      })
+
+      await ctx.prisma.subscriptionPlan.delete({
+        where: { id: input.id },
+      })
+
+      // Log the deletion
+      await ctx.prisma.auditLog.create({
+        data: {
+          action: 'DELETE',
+          entityType: 'SubscriptionPlan',
+          entityId: input.id,
+          oldValues: {
+            name: plan.name,
+            pricingModel: plan.pricingModel,
+          },
+          userId: ctx.session.user.id,
+        },
+      })
+
+      return {
+        success: true,
+        message: `Subscription plan "${plan.name}" deleted successfully`,
       }
     }),
 })
