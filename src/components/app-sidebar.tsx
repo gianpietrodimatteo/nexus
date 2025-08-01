@@ -42,7 +42,7 @@ const getNavData = (userRole?: string) => {
     },
     {
       title: "Billing",
-      url: "#",
+      url: "/admin/billing",
       icon: BillingIcon,
     },
     {
