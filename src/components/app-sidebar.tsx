@@ -93,13 +93,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="h-[72px] flex items-center justify-center">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-4 h-auto"
-            >
-              <a href="/admin" className="flex items-center gap-2">
-                <img src="/braintrust-logo.svg" alt="Nexus" className="!size-5" />
-                <span className="text-base font-semibold">Nexus</span>
+            <SidebarMenuButton asChild>
+              <a href="/admin" className="flex items-center gap-3">
+                <img src="/braintrust-logo.svg" alt="Nexus" className="!size-6" />
+                <span className="text-lg font-semibold">Nexus</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
