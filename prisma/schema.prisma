@@ -118,6 +118,12 @@ enum AuditAction {
   VIEW
 }
 
+enum NotificationMethod {
+  EMAIL
+  SMS
+  SLACK
+}
+
 // Core Models
 model User {
   id       String   @id @default(cuid())
@@ -148,6 +154,9 @@ model User {
   // Audit trail
   creditsApplied Credit[]   @relation("AppliedBy")
   auditLogs      AuditLog[]
+  
+  // Exception notifications
+  exceptionNotifications ExceptionNotification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -271,12 +280,34 @@ model Exception {
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
 
+  // Notification tracking
+  notifications ExceptionNotification[]
+
   reportedAt DateTime  @default(now())
   resolvedAt DateTime?
 
   @@index([organizationId, reportedAt])
   @@index([status, severity])
   @@index([workflowId])
+}
+
+model ExceptionNotification {
+  id        String             @id @default(cuid())
+  method    NotificationMethod
+  recipient String             // Email or phone number
+  sentAt    DateTime           @default(now())
+  success   Boolean            @default(true)
+  error     String?            // If notification failed
+
+  // Relationships
+  exceptionId String
+  exception   Exception @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([exceptionId])
+  @@index([userId])
 }
 
 model SubscriptionPlan {

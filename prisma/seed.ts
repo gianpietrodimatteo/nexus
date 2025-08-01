@@ -621,8 +621,8 @@ async function main() {
       invoiceDate,
       dueDate,
       amount: totalAmount,
-      paymentMethod: 'STRIPE',
-      status: i === 0 ? 'PENDING' : 'PAID', // Current month pending, others paid
+      paymentMethod: 'STRIPE' as const,
+      status: (i === 0 ? 'PENDING' : 'PAID') as const, // Current month pending, others paid
       stripeInvoiceId: `in_test_${Math.random().toString(36).substr(2, 9)}`
     })
   }
@@ -653,6 +653,119 @@ async function main() {
     skipDuplicates: true
   })
 
+  // Create sample exceptions
+  console.log('⚠️ Creating exception data...')
+  
+  const exceptionData = [
+    {
+      type: 'AUTHENTICATION',
+      severity: 'HIGH',
+      status: 'NEW',
+      remedy: null,
+      workflowId: acmeInvoiceWorkflow.id,
+      organizationId: acmeCorp.id,
+      departmentId: acmeEngDept.id,
+      reportedAt: new Date('2024-01-20T10:30:00Z'),
+    },
+    {
+      type: 'DATA_PROCESS',
+      severity: 'CRITICAL',
+      status: 'IN_PROGRESS',
+      remedy: 'Investigating data source connection timeout',
+      workflowId: acmeInvoiceWorkflow.id,
+      organizationId: acmeCorp.id,
+      departmentId: acmeEngDept.id,
+      reportedAt: new Date('2024-01-18T14:15:00Z'),
+    },
+    {
+      type: 'WORKFLOW_LOGIC',
+      severity: 'MEDIUM',
+      status: 'RESOLVED',
+      remedy: 'Updated conditional logic to handle edge case',
+      workflowId: acmeMarketingWorkflow.id,
+      organizationId: acmeCorp.id,
+      departmentId: acmeMarketingDept.id,
+      reportedAt: new Date('2024-01-15T09:45:00Z'),
+      resolvedAt: new Date('2024-01-16T11:20:00Z'),
+    },
+    {
+      type: 'INTEGRATION',
+      severity: 'LOW',
+      status: 'IGNORED',
+      remedy: 'Third-party API rate limit - acceptable performance impact',
+      workflowId: techCorpWorkflow.id,
+      organizationId: techCorp.id,
+      departmentId: techCorpItDept.id,
+      reportedAt: new Date('2024-01-12T16:00:00Z'),
+    },
+    {
+      type: 'BROWSER_AUTOMATION',
+      severity: 'HIGH',
+      status: 'RESOLVED',
+      remedy: 'Updated selector due to UI changes on target site',
+      workflowId: midTechWorkflow.id,
+      organizationId: midTechSolutions.id,
+      departmentId: midTechDevDept.id,
+      reportedAt: new Date('2024-01-10T08:30:00Z'),
+      resolvedAt: new Date('2024-01-11T13:45:00Z'),
+    },
+    {
+      type: 'AUTHENTICATION',
+      severity: 'CRITICAL',
+      status: 'NEW',
+      remedy: null,
+      workflowId: techCorpWorkflow.id,
+      organizationId: techCorp.id,
+      departmentId: techCorpItDept.id,
+      reportedAt: new Date('2024-01-22T11:15:00Z'),
+    },
+  ]
+
+  const createdExceptions = await prisma.exception.createMany({
+    data: exceptionData,
+    skipDuplicates: true
+  })
+
+  // Create some exception notifications for the exceptions
+  const exceptions = await prisma.exception.findMany({
+    where: {
+      organizationId: { in: [acmeCorp.id, techCorp.id, midTechSolutions.id] }
+    },
+    take: 3, // Just create notifications for first few exceptions
+  })
+
+  const notificationData = []
+  for (const exception of exceptions) {
+    // Notify SE user via email
+    notificationData.push({
+      method: 'EMAIL',
+      recipient: seUser.email,
+      sentAt: new Date(exception.reportedAt.getTime() + 5 * 60 * 1000), // 5 minutes after exception
+      success: true,
+      error: null,
+      exceptionId: exception.id,
+      userId: seUser.id,
+    })
+
+    // Notify organization admin via email if it's Acme Corp
+    if (exception.organizationId === acmeCorp.id) {
+      notificationData.push({
+        method: 'EMAIL',
+        recipient: acmeClientUser.email,
+        sentAt: new Date(exception.reportedAt.getTime() + 10 * 60 * 1000), // 10 minutes after
+        success: true,
+        error: null,
+        exceptionId: exception.id,
+        userId: acmeClientUser.id,
+      })
+    }
+  }
+
+  await prisma.exceptionNotification.createMany({
+    data: notificationData,
+    skipDuplicates: true
+  })
+
   console.log('✅ Seed completed successfully!')
   console.log('👤 Created users:')
   console.log(`   Admin: ${adminUser.email}`)
@@ -664,6 +777,7 @@ async function main() {
   console.log(`📊 Created ${usageData.length} months of usage data`)
   console.log(`⏰ Created ${seHoursData.length} months of SE hours tracking`)
   console.log(`🧾 Created ${invoiceData.length} sample invoices`)
+  console.log(`⚠️ Created ${exceptionData.length} sample exceptions with ${notificationData.length} notifications`)
 }
 
 main()
