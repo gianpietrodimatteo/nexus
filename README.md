@@ -1,31 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexus Platform
 
-## Getting Started
+Next.js 14 SPA hosting both Admin and Client dashboards for the Nexus platform. Built with React 19, TypeScript, Tailwind + shadcn‑ui, tRPC, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Quick Start
+
+1. Install dependencies:
 
 ```bash
 pnpm install
+```
+
+2. Start the development database (PostgreSQL via Docker):
+
+```bash
+pnpm db:up
+```
+
+3. Set up the database:
+
+```bash
+pnpm db:migrate  # Run migrations
+pnpm db:seed    # Seed test data
+```
+
+4. Start the development server:
+
+```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app will be available at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Test Credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+Admin:  admin@usebraintrust.com / password123
+SE:     se@usebraintrust.com / password123
+Client: client@acme.com / password123
+```
 
-## Learn More
+## Development Commands
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `pnpm db:fresh` - Reset database container and regenerate Prisma client
+- `pnpm db:studio` - Open Prisma Studio to browse data
+- `pnpm db:reset` - Reset database to clean state (drops all tables)
+- `pnpm lint` - Run ESLint
+- `pnpm format` - Run Prettier
