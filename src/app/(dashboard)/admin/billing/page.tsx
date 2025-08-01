@@ -5,11 +5,14 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc'
 import type { AuthSession } from '@/server/auth/types'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { ClientSelector } from '../clients/components/client-selector'
 import { useAdminHeader } from '@/components/admin-header-context'
+import { 
+  BillingOverviewSection, 
+  UsageSummaryCard, 
+  RecentInvoicesCard, 
+  BillingActionsSection 
+} from './components'
 
 export default function AdminBillingPage() {
   const { data: session, status } = useSession()
@@ -86,6 +89,32 @@ export default function AdminBillingPage() {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
+  // Event handlers for component actions
+  const handleViewDetailedReport = () => {
+    console.log('View detailed usage report')
+    // TODO: Navigate to detailed usage report page
+  }
+
+  const handleViewAllInvoices = () => {
+    console.log('View all invoices')
+    // TODO: Navigate to all invoices page
+  }
+
+  const handleUpdatePaymentMethod = () => {
+    console.log('Update payment method')
+    // TODO: Open payment method update modal
+  }
+
+  const handleDownloadContract = () => {
+    console.log('Download contract')
+    // TODO: Download contract file
+  }
+
+  const handleContactSupport = () => {
+    console.log('Contact support')
+    // TODO: Open support contact modal or navigate to support page
+  }
+
   // Render content
   const renderContent = () => {
     if (!selectedOrganizationId) {
@@ -100,227 +129,34 @@ export default function AdminBillingPage() {
     return (
       <div className="space-y-8">
         {/* Billing Overview Section */}
-        <Card className="shadow-sm border border-[#E9E7E4]">
-          <div className="p-8">
-            <h2 className="text-2xl font-semibold text-[#1F2937] mb-6">Billing Overview</h2>
-            
-            {/* Plan and Credits Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {/* Current Plan */}
-              <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
-                <div className="text-sm text-[#757575] mb-2">Current Plan</div>
-                <div className="text-xl font-semibold text-[#1F2937] mb-2">
-                  {billingOverview?.currentPlan.name || 'Enterprise'}
-                </div>
-                <div className="text-sm text-[#3B3B3B]">
-                  ${billingOverview?.currentPlan.monthlyFee || 2000}/month base fee
-                </div>
-              </div>
+        <BillingOverviewSection
+          billingOverview={billingOverview}
+          isLoading={billingLoading}
+        />
 
-              {/* Credits Remaining */}
-              <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
-                <div className="text-sm text-[#757575] mb-2">Credits Remaining</div>
-                <div className="text-xl font-semibold text-[#1F2937] mb-2">
-                  {billingOverview?.credits.remaining?.toLocaleString() || '8,450'}
-                </div>
-                <div className="text-sm text-[#3B3B3B]">
-                  Renews on {billingOverview?.credits.renewsOn 
-                    ? new Date(billingOverview.credits.renewsOn).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })
-                    : 'May 1, 2025'
-                  }
-                </div>
-              </div>
+        {/* Usage Summary and Recent Invoices Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <UsageSummaryCard
+            usageSummary={usageSummary}
+            isLoading={usageLoading}
+            onViewDetailedReport={handleViewDetailedReport}
+          />
 
-              {/* SE Hours This Month */}
-              <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
-                <div className="text-sm text-[#757575] mb-2">SE Hours This Month</div>
-                {billingOverview?.seHours ? (
-                  <>
-                    <div className="text-xl font-semibold text-[#1F2937] mb-2">
-                      {billingOverview.seHours.usedThisMonth.toFixed(2)} / {billingOverview.seHours.allocatedThisMonth.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-[#3B3B3B]">
-                      {billingOverview.seHours.remainingThisMonth.toFixed(2)} hours remaining
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-xl font-semibold text-[#1F2937] mb-2">No data</div>
-                    <div className="text-sm text-[#3B3B3B]">Hours not allocated</div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Usage Summary and Recent Invoices Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Usage Summary */}
-              <Card className="shadow-sm border border-[#E9E7E4]">
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-semibold text-[#1F2937]">Usage Summary</h3>
-                    <Button variant="link" className="text-[#4E86CF] p-0 h-auto">
-                      View detailed report →
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
-                      <span className="text-[#3B3B3B]">API Calls</span>
-                      <span className="font-medium text-[#1F2937]">
-                        {usageSummary?.apiCalls?.toLocaleString() || '245,678'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
-                      <span className="text-[#3B3B3B]">Storage Used</span>
-                      <span className="font-medium text-[#1F2937]">
-                        {usageSummary?.storageUsedTB?.toFixed(1) || '1.2'} TB
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center py-3">
-                      <span className="text-[#3B3B3B]">Active Users</span>
-                      <span className="font-medium text-[#1F2937]">
-                        {usageSummary?.activeUsers || '127'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Recent Invoices */}
-              <Card className="shadow-sm border border-[#E9E7E4]">
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#1F2937] mb-6">Recent Invoices</h3>
-                  
-                  <div className="space-y-4">
-                    {recentInvoices && recentInvoices.length > 0 ? (
-                      recentInvoices.map((invoice, index) => (
-                        <div key={invoice.id} className={`flex justify-between items-center py-3 ${
-                          index < recentInvoices.length - 1 ? 'border-b border-[#E9E7E4]' : ''
-                        }`}>
-                          <div>
-                            <div className="text-[#1F2937] font-medium">
-                              {new Date(invoice.date).toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long' 
-                              })}
-                            </div>
-                            <div className="text-sm text-[#757575]">
-                              Invoice {invoice.invoiceNumber}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#1F2937]">
-                              ${invoice.amount.toFixed(2)}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {invoice.status === 'PAID' ? 'Paid' : 
-                               invoice.status === 'SENT' ? 'Sent' : 
-                               invoice.status === 'OVERDUE' ? 'Overdue' : 'Pending'}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      // Fallback mock data
-                      <>
-                        <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
-                          <div>
-                            <div className="text-[#1F2937] font-medium">April 2025</div>
-                            <div className="text-sm text-[#757575]">Invoice #2025-04</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#1F2937]">$2,450.00</span>
-                            <Badge variant="outline" className="text-xs">Paid</Badge>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
-                          <div>
-                            <div className="text-[#1F2937] font-medium">March 2025</div>
-                            <div className="text-sm text-[#757575]">Invoice #2025-03</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#1F2937]">$2,450.00</span>
-                            <Badge variant="outline" className="text-xs">Paid</Badge>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-center py-3">
-                          <div>
-                            <div className="text-[#1F2937] font-medium">February 2025</div>
-                            <div className="text-sm text-[#757575]">Invoice #2025-02</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#1F2937]">$2,450.00</span>
-                            <Badge variant="outline" className="text-xs">Paid</Badge>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="mt-4">
-                    <Button variant="link" className="text-[#4E86CF] p-0 h-auto">
-                      View all invoices →
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </Card>
+          <RecentInvoicesCard
+            invoices={recentInvoices}
+            isLoading={invoicesLoading}
+            onViewAllInvoices={handleViewAllInvoices}
+          />
+        </div>
 
         {/* Billing Actions Section */}
-        <Card className="shadow-sm border border-[#E9E7E4]">
-          <div className="p-8">
-            <h3 className="text-xl font-semibold text-[#1F2937] mb-6">Billing Actions</h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Payment Method */}
-              <div>
-                <h4 className="text-base font-medium text-[#1F2937] mb-4">Payment Method</h4>
-                <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-7 h-6 bg-[#1F2937] rounded flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">
-                        {paymentMethod?.cardBrand?.charAt(0) || 'V'}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-[#1F2937]">
-                        {paymentMethod?.cardBrand || 'Visa'} ending in {paymentMethod?.cardLast4 || '4242'}
-                      </div>
-                      <div className="text-sm text-[#757575]">
-                        Expires {paymentMethod?.cardExpMonth || 12}/{paymentMethod?.cardExpYear?.toString().slice(-2) || '25'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <Button variant="link" className="text-[#4E86CF] p-0 h-auto mt-4">
-                  Update payment method
-                </Button>
-              </div>
-
-              {/* Need Help */}
-              <div>
-                <h4 className="text-base font-medium text-[#1F2937] mb-4">Need Help?</h4>
-                <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-center">
-                    Download Contract
-                  </Button>
-                  <Button className="w-full justify-center bg-[#141417] hover:bg-[#141417]/90">
-                    Contact Support
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <BillingActionsSection
+          paymentMethod={paymentMethod}
+          isLoading={paymentLoading}
+          onUpdatePaymentMethod={handleUpdatePaymentMethod}
+          onDownloadContract={handleDownloadContract}
+          onContactSupport={handleContactSupport}
+        />
       </div>
     )
   }
