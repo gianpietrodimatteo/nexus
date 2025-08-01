@@ -149,6 +149,72 @@ export const usageTrackingSchema = z.object({
   apiCalls: z.number().int().min(0),
 })
 
+/**
+ * Schema for billing overview response
+ */
+export const billingOverviewSchema = z.object({
+  currentPlan: z.object({
+    name: z.string(),
+    monthlyFee: z.number(),
+    contractStartDate: z.date().nullable(),
+    contractEndDate: z.date().nullable(),
+  }),
+  credits: z.object({
+    remaining: z.number(),
+    renewsOn: z.date().nullable(),
+  }),
+  seHours: z.object({
+    usedThisMonth: z.number(),
+    allocatedThisMonth: z.number(),
+    remainingThisMonth: z.number(),
+  }),
+})
+
+/**
+ * Schema for usage summary response
+ */
+export const usageSummarySchema = z.object({
+  apiCalls: z.number(),
+  storageUsedTB: z.number(),
+  activeUsers: z.number(),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020),
+})
+
+/**
+ * Schema for invoice response
+ */
+export const invoiceResponseSchema = z.object({
+  id: z.string(),
+  invoiceNumber: z.string(),
+  date: z.date(),
+  dueDate: z.date(),
+  amount: z.number(),
+  status: invoiceStatusSchema,
+  paymentMethod: z.string(),
+})
+
+/**
+ * Schema for payment method response
+ */
+export const paymentMethodResponseSchema = z.object({
+  type: z.string(),
+  cardBrand: z.string().optional(),
+  cardLast4: z.string().optional(),
+  cardExpMonth: z.number().optional(),
+  cardExpYear: z.number().optional(),
+  isActive: z.boolean(),
+})
+
+/**
+ * Schema for admin credit application
+ */
+export const applyCreditSchema = z.object({
+  organizationId: z.string().min(1, 'Organization ID is required'),
+  amount: z.number().positive('Credit amount must be positive'),
+  reason: z.string().min(1, 'Reason is required'),
+})
+
 // Export TypeScript types
 export type BillingStatus = z.infer<typeof billingStatusSchema>
 export type PaymentMethodType = z.infer<typeof paymentMethodTypeSchema>
@@ -161,3 +227,8 @@ export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>
 export type InvoiceListFilter = z.infer<typeof invoiceListFilterSchema>
 export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>
 export type UsageTrackingInput = z.infer<typeof usageTrackingSchema>
+export type BillingOverview = z.infer<typeof billingOverviewSchema>
+export type UsageSummary = z.infer<typeof usageSummarySchema>
+export type InvoiceResponse = z.infer<typeof invoiceResponseSchema>
+export type PaymentMethodResponse = z.infer<typeof paymentMethodResponseSchema>
+export type ApplyCreditInput = z.infer<typeof applyCreditSchema>

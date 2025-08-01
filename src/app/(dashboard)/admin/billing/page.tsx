@@ -20,8 +20,23 @@ export default function AdminBillingPage() {
   // Type guard for our custom session
   const authSession = session as AuthSession | null
 
-  // Fetch organization-specific data only when an organization is selected
-  const { data: organization, isLoading: orgLoading } = trpc.clients.getOrganization.useQuery(
+  // Fetch billing-specific data only when an organization is selected
+  const { data: billingOverview, isLoading: billingLoading } = trpc.billing.getBillingOverview.useQuery(
+    { organizationId: selectedOrganizationId },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
+
+  const { data: usageSummary, isLoading: usageLoading } = trpc.billing.getUsageSummary.useQuery(
+    { organizationId: selectedOrganizationId },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
+
+  const { data: recentInvoices, isLoading: invoicesLoading } = trpc.billing.getRecentInvoices.useQuery(
+    { organizationId: selectedOrganizationId, limit: 3 },
+    { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
+  )
+
+  const { data: paymentMethod, isLoading: paymentLoading } = trpc.billing.getPaymentMethod.useQuery(
     { organizationId: selectedOrganizationId },
     { enabled: !!selectedOrganizationId && authSession?.user?.role === 'ADMIN' }
   )
@@ -94,22 +109,41 @@ export default function AdminBillingPage() {
               {/* Current Plan */}
               <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
                 <div className="text-sm text-[#757575] mb-2">Current Plan</div>
-                <div className="text-xl font-semibold text-[#1F2937] mb-2">Enterprise</div>
-                <div className="text-sm text-[#3B3B3B]">$2,000/month base fee</div>
+                <div className="text-xl font-semibold text-[#1F2937] mb-2">
+                  {billingOverview?.currentPlan.name || 'Enterprise'}
+                </div>
+                <div className="text-sm text-[#3B3B3B]">
+                  ${billingOverview?.currentPlan.monthlyFee || 2000}/month base fee
+                </div>
               </div>
 
               {/* Credits Remaining */}
               <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
                 <div className="text-sm text-[#757575] mb-2">Credits Remaining</div>
-                <div className="text-xl font-semibold text-[#1F2937] mb-2">8,450</div>
-                <div className="text-sm text-[#3B3B3B]">Renews on May 1, 2025</div>
+                <div className="text-xl font-semibold text-[#1F2937] mb-2">
+                  {billingOverview?.credits.remaining?.toLocaleString() || '8,450'}
+                </div>
+                <div className="text-sm text-[#3B3B3B]">
+                  Renews on {billingOverview?.credits.renewsOn 
+                    ? new Date(billingOverview.credits.renewsOn).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })
+                    : 'May 1, 2025'
+                  }
+                </div>
               </div>
 
               {/* SE Hours This Month */}
               <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
                 <div className="text-sm text-[#757575] mb-2">SE Hours This Month</div>
-                <div className="text-xl font-semibold text-[#1F2937] mb-2">12.5 / 20</div>
-                <div className="text-sm text-[#3B3B3B]">7.5 hours remaining</div>
+                <div className="text-xl font-semibold text-[#1F2937] mb-2">
+                  {billingOverview?.seHours.usedThisMonth || 12.5} / {billingOverview?.seHours.allocatedThisMonth || 20}
+                </div>
+                <div className="text-sm text-[#3B3B3B]">
+                  {billingOverview?.seHours.remainingThisMonth || 7.5} hours remaining
+                </div>
               </div>
             </div>
 
@@ -128,15 +162,21 @@ export default function AdminBillingPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
                       <span className="text-[#3B3B3B]">API Calls</span>
-                      <span className="font-medium text-[#1F2937]">245,678</span>
+                      <span className="font-medium text-[#1F2937]">
+                        {usageSummary?.apiCalls?.toLocaleString() || '245,678'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
                       <span className="text-[#3B3B3B]">Storage Used</span>
-                      <span className="font-medium text-[#1F2937]">1.2 TB</span>
+                      <span className="font-medium text-[#1F2937]">
+                        {usageSummary?.storageUsedTB?.toFixed(1) || '1.2'} TB
+                      </span>
                     </div>
                     <div className="flex justify-between items-center py-3">
                       <span className="text-[#3B3B3B]">Active Users</span>
-                      <span className="font-medium text-[#1F2937]">127</span>
+                      <span className="font-medium text-[#1F2937]">
+                        {usageSummary?.activeUsers || '127'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -148,39 +188,71 @@ export default function AdminBillingPage() {
                   <h3 className="text-xl font-semibold text-[#1F2937] mb-6">Recent Invoices</h3>
                   
                   <div className="space-y-4">
-                    {/* Invoice Item */}
-                    <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
-                      <div>
-                        <div className="text-[#1F2937] font-medium">April 2025</div>
-                        <div className="text-sm text-[#757575]">Invoice #2025-04</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[#1F2937]">$2,450.00</span>
-                        <Badge variant="outline" className="text-xs">Paid</Badge>
-                      </div>
-                    </div>
+                    {recentInvoices && recentInvoices.length > 0 ? (
+                      recentInvoices.map((invoice, index) => (
+                        <div key={invoice.id} className={`flex justify-between items-center py-3 ${
+                          index < recentInvoices.length - 1 ? 'border-b border-[#E9E7E4]' : ''
+                        }`}>
+                          <div>
+                            <div className="text-[#1F2937] font-medium">
+                              {new Date(invoice.date).toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'long' 
+                              })}
+                            </div>
+                            <div className="text-sm text-[#757575]">
+                              Invoice {invoice.invoiceNumber}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[#1F2937]">
+                              ${invoice.amount.toFixed(2)}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {invoice.status === 'PAID' ? 'Paid' : 
+                               invoice.status === 'SENT' ? 'Sent' : 
+                               invoice.status === 'OVERDUE' ? 'Overdue' : 'Pending'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // Fallback mock data
+                      <>
+                        <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
+                          <div>
+                            <div className="text-[#1F2937] font-medium">April 2025</div>
+                            <div className="text-sm text-[#757575]">Invoice #2025-04</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[#1F2937]">$2,450.00</span>
+                            <Badge variant="outline" className="text-xs">Paid</Badge>
+                          </div>
+                        </div>
 
-                    <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
-                      <div>
-                        <div className="text-[#1F2937] font-medium">March 2025</div>
-                        <div className="text-sm text-[#757575]">Invoice #2025-03</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[#1F2937]">$2,450.00</span>
-                        <Badge variant="outline" className="text-xs">Paid</Badge>
-                      </div>
-                    </div>
+                        <div className="flex justify-between items-center py-3 border-b border-[#E9E7E4]">
+                          <div>
+                            <div className="text-[#1F2937] font-medium">March 2025</div>
+                            <div className="text-sm text-[#757575]">Invoice #2025-03</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[#1F2937]">$2,450.00</span>
+                            <Badge variant="outline" className="text-xs">Paid</Badge>
+                          </div>
+                        </div>
 
-                    <div className="flex justify-between items-center py-3">
-                      <div>
-                        <div className="text-[#1F2937] font-medium">February 2025</div>
-                        <div className="text-sm text-[#757575]">Invoice #2025-02</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[#1F2937]">$2,450.00</span>
-                        <Badge variant="outline" className="text-xs">Paid</Badge>
-                      </div>
-                    </div>
+                        <div className="flex justify-between items-center py-3">
+                          <div>
+                            <div className="text-[#1F2937] font-medium">February 2025</div>
+                            <div className="text-sm text-[#757575]">Invoice #2025-02</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[#1F2937]">$2,450.00</span>
+                            <Badge variant="outline" className="text-xs">Paid</Badge>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="mt-4">
@@ -206,11 +278,17 @@ export default function AdminBillingPage() {
                 <div className="bg-[#FAF9F8] border border-[#E9E7E4] rounded-lg p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-7 h-6 bg-[#1F2937] rounded flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">V</span>
+                      <span className="text-white text-xs font-bold">
+                        {paymentMethod?.cardBrand?.charAt(0) || 'V'}
+                      </span>
                     </div>
                     <div>
-                      <div className="font-medium text-[#1F2937]">Visa ending in 4242</div>
-                      <div className="text-sm text-[#757575]">Expires 12/25</div>
+                      <div className="font-medium text-[#1F2937]">
+                        {paymentMethod?.cardBrand || 'Visa'} ending in {paymentMethod?.cardLast4 || '4242'}
+                      </div>
+                      <div className="text-sm text-[#757575]">
+                        Expires {paymentMethod?.cardExpMonth || 12}/{paymentMethod?.cardExpYear?.toString().slice(-2) || '25'}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -173,6 +173,9 @@ model Organization {
   invoices         Invoice[]
   credits          Credit[]
   auditLogs        AuditLog[]
+  usageTracking    UsageTracking[]
+  paymentMethod    PaymentMethodData?
+  seHoursTracking  SEHoursTracking[]
 
   // Subscription
   subscriptionPlanId String?
@@ -402,4 +405,69 @@ model AuditLog {
   @@index([organizationId, timestamp])
   @@index([userId])
   @@index([entityType, entityId])
+}
+
+model UsageTracking {
+  id               String @id @default(cuid())
+  month            Int
+  year             Int
+  activeUsers      Int    @default(0)
+  workflowExecutions Int  @default(0)
+  storageUsedGB    Float  @default(0)
+  apiCalls         Int    @default(0)
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, month, year])
+  @@index([organizationId, year, month])
+}
+
+model PaymentMethodData {
+  id        String  @id @default(cuid())
+  isPrimary Boolean @default(false)
+  
+  // Credit card specific fields
+  cardLast4    String?
+  cardBrand    String?
+  cardExpMonth Int?
+  cardExpYear  Int?
+  
+  // Bank transfer specific fields
+  bankName     String?
+  accountLast4 String?
+  
+  // Stripe integration
+  stripePaymentMethodId String?
+  
+  // Relationships
+  organizationId String @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model SEHoursTracking {
+  id                String @id @default(cuid())
+  month             Int
+  year              Int
+  allocatedHours    Float  @default(0)
+  usedHours         Float  @default(0)
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, month, year])
+  @@index([organizationId, year, month])
 }
