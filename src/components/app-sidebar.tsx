@@ -3,16 +3,16 @@
 import * as React from "react"
 import { useSession } from "next-auth/react"
 import {
-  IconBrandAsana,
-  IconCreditCard,
-  IconDashboard,
-  IconExclamationCircle,
-  IconInnerShadowTop,
-  IconMail,
-  IconReport,
   IconSettings,
-  IconUsers,
 } from "@tabler/icons-react"
+import {
+  DashboardIcon,
+  ClientsIcon,
+  BillingIcon,
+  SubscriptionsIcon,
+  ExceptionsIcon,
+  UsersIcon,
+} from "@/components/icons/custom-icons"
 import type { AuthSession } from "@/server/auth/types"
 
 import { NavMain } from "@/components/nav-main"
@@ -33,37 +33,27 @@ const getNavData = (userRole?: string) => {
     {
       title: "Dashboard",
       url: "/admin",
-      icon: IconDashboard,
+      icon: DashboardIcon,
     },
     {
       title: "Clients",
       url: "/admin/clients",
-      icon: IconUsers,
+      icon: ClientsIcon,
     },
     {
       title: "Billing",
       url: "#",
-      icon: IconCreditCard,
+      icon: BillingIcon,
     },
     {
       title: "Subscriptions",
       url: "#",
-      icon: IconBrandAsana,
-    },
-    {
-      title: "Messaging",
-      url: "#",
-      icon: IconMail,
-    },
-    {
-      title: "Reporting",
-      url: "#",
-      icon: IconReport,
+      icon: SubscriptionsIcon,
     },
     {
       title: "Exceptions",
       url: "#",
-      icon: IconExclamationCircle,
+      icon: ExceptionsIcon,
     },
   ]
 
@@ -72,7 +62,7 @@ const getNavData = (userRole?: string) => {
     baseNavItems.splice(1, 0, {
       title: "Users",
       url: "/admin/users",
-      icon: IconUsers,
+      icon: UsersIcon,
     })
   }
 
