@@ -49,16 +49,23 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt'
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         const authUser = user as AuthUser
         // Add our custom properties to the token
         Object.assign(token, {
           role: authUser.role,
           organizationId: authUser.organizationId,
-          organization: authUser.organization
+          organization: authUser.organization,
+          impersonationContext: authUser.impersonationContext
         })
       }
+      
+      // Handle session updates (for impersonation context updates)
+      if (trigger === 'update' && session?.impersonationContext) {
+        token.impersonationContext = session.impersonationContext
+      }
+      
       return token
     },
     async session({ session, token }): Promise<AuthSession> {
@@ -70,6 +77,7 @@ export const authOptions: NextAuthOptions = {
         authSession.user.role = authToken.role
         authSession.user.organizationId = authToken.organizationId
         authSession.user.organization = authToken.organization
+        authSession.user.impersonationContext = authToken.impersonationContext
         
         return authSession
       }

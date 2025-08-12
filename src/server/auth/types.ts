@@ -9,6 +9,12 @@ export interface AuthUser {
   role: PrismaUser['role']
   organizationId: string | null
   organization: Organization | null
+  // Impersonation context for SE users
+  impersonationContext?: {
+    type: 'ADMIN' | 'CLIENT'
+    organizationId?: string // Only set when impersonating client
+    organizationName?: string // For display purposes
+  }
 }
 
 export interface AuthSession extends DefaultSession {
@@ -20,6 +26,12 @@ export interface AuthTokenData {
   role: PrismaUser['role']
   organizationId: string | null
   organization: Organization | null
+  // Impersonation context for SE users
+  impersonationContext?: {
+    type: 'ADMIN' | 'CLIENT'
+    organizationId?: string
+    organizationName?: string
+  }
 }
 
 // Type for our enhanced JWT token

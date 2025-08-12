@@ -52,8 +52,10 @@ export function LoginForm({
         // Redirect based on user role
         switch (session.user.role) {
           case "ADMIN":
+            router.push("/admin/dashboard")
+            break
           case "SE":
-            router.push("/admin")
+            router.push("/se/select")
             break
           case "CLIENT":
             router.push("/client")

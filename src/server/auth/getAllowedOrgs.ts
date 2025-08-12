@@ -23,7 +23,14 @@ export async function getAllowedOrgIds(
       return undefined
 
     case 'SE':
-      // Solutions Engineers can access organizations they are explicitly assigned to.
+      // Check if SE is in CLIENT impersonation mode
+      if (user.impersonationContext?.type === 'CLIENT' && user.impersonationContext.organizationId) {
+        // When impersonating a client, limit access to that organization only
+        return [user.impersonationContext.organizationId]
+      }
+      
+      // For ADMIN impersonation mode or no impersonation context,
+      // SE gets access to all their assigned organizations (normal SE behavior)
       const orgs = await prisma.organization.findMany({
         where: { assignedSEs: { some: { id: user.id } } },
         select: { id: true },

@@ -1,17 +1,22 @@
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
-import { SectionCards } from "@/components/section-cards"
+"use client"
 
-import data from "./data.json"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 export default function AdminPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    // Redirect to dashboard 
+    router.replace("/admin/dashboard")
+  }, [router])
+
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <SectionCards />
-      <div className="px-4 lg:px-6">
-        <ChartAreaInteractive />
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Redirecting to dashboard...</p>
       </div>
-      <DataTable data={data} />
     </div>
   )
 }

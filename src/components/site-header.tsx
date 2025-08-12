@@ -68,6 +68,19 @@ export function SiteHeader() {
             <IconBell className="h-5 w-5 text-[#141417]" />
           </Button>
 
+          {/* Context Indicator for SE */}
+          {authSession && authSession.user.role === 'SE' && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm font-medium text-blue-900">
+                {authSession.user.impersonationContext?.type === 'CLIENT' 
+                  ? `Client: ${authSession.user.impersonationContext.organizationName}`
+                  : 'Admin View'
+                }
+              </span>
+            </div>
+          )}
+
           {/* User Profile Dropdown */}
           {authSession && (
             <DropdownMenu>
@@ -122,8 +135,30 @@ export function SiteHeader() {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
+                
+                {/* SE Context Switching */}
+                {authSession.user.role === 'SE' && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        signOut({ callbackUrl: '/se/select' })
+                      }}
+                      className="cursor-pointer"
+                    >
+                      Switch View
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                
                 <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  onClick={() => {
+                    if (authSession?.user.role === 'SE') {
+                      signOut({ callbackUrl: '/se/select' })
+                    } else {
+                      signOut({ callbackUrl: '/login' })
+                    }
+                  }}
                   className="cursor-pointer text-red-600 focus:text-red-600"
                 >
                   Sign Out
