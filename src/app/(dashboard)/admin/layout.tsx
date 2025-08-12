@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className="!gap-0"
       >
         <AppSidebar variant="inset" className="!border-r-0" />
-        <SidebarInset className="!rounded-none">
+        <SidebarInset className="m-0 md:peer-data-[variant=inset]:m-0 !rounded-none md:peer-data-[variant=inset]:rounded-none md:peer-data-[variant=inset]:shadow-none">
           <SiteHeader />
           <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2 p-6">

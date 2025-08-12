@@ -1,15 +1,8 @@
-"use client"
+"use client";
 
-import { useSession, signOut } from "next-auth/react"
-import { IconBell, IconChevronDown } from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { useAdminHeader } from "@/components/admin-header-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,46 +11,49 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useAdminHeader } from "@/components/admin-header-context"
-import type { AuthSession } from "@/server/auth/types"
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import type { AuthSession } from "@/server/auth/types";
+import { IconBell, IconChevronDown } from "@tabler/icons-react";
+import { signOut, useSession } from "next-auth/react";
 
 export function SiteHeader() {
-  const { data: session } = useSession()
-  const authSession = session as AuthSession | null
-  const { headerContent } = useAdminHeader()
+  const { data: session } = useSession();
+  const authSession = session as AuthSession | null;
+  const { headerContent } = useAdminHeader();
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-2 border-b bg-white shadow-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-[72px]">
-      <div className="flex w-full h-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+    <header className="sticky top-0 z-50 flex h-[72px] w-full shrink-0 items-center gap-2 border-b bg-white shadow-sm transition-[width,height] ease-linear">
+      <div className="flex h-full w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        
+
         {headerContent ? (
           <div className="flex flex-1 items-center justify-between gap-6">
-            <h1 className="text-xl font-semibold text-[#141417]">{headerContent.title}</h1>
-            
+            <h1 className="text-xl font-semibold text-[#141417]">
+              {headerContent.title}
+            </h1>
+
             <div className="flex items-center gap-6">
               {headerContent.navigation && (
                 <div className="flex items-center">
                   {headerContent.navigation}
                 </div>
               )}
-              
+
               {headerContent.actions && (
-                <div className="flex items-center">
-                  {headerContent.actions}
-                </div>
+                <div className="flex items-center">{headerContent.actions}</div>
               )}
             </div>
           </div>
         ) : (
           <h1 className="text-xl font-normal text-[#141417]">Dashboard</h1>
         )}
-        
+
         <div className="ml-auto flex items-center gap-3">
           {/* Notification Button */}
           <Button
@@ -69,14 +65,13 @@ export function SiteHeader() {
           </Button>
 
           {/* Context Indicator for SE */}
-          {authSession && authSession.user.role === 'SE' && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+          {authSession && authSession.user.role === "SE" && (
+            <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5">
+              <div className="h-2 w-2 rounded-full bg-blue-500"></div>
               <span className="text-sm font-medium text-blue-900">
-                {authSession.user.impersonationContext?.type === 'CLIENT' 
+                {authSession.user.impersonationContext?.type === "CLIENT"
                   ? `Client: ${authSession.user.impersonationContext.organizationName}`
-                  : 'Admin View'
-                }
+                  : "Admin View"}
               </span>
             </div>
           )}
@@ -87,12 +82,12 @@ export function SiteHeader() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 h-12 px-2 hover:bg-gray-50 rounded-lg"
+                  className="flex h-12 items-center gap-2 rounded-lg px-2 hover:bg-gray-50"
                 >
                   <Avatar className="h-12 w-12">
-                    <AvatarImage 
-                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${authSession.user.name}`} 
-                      alt={authSession.user.name} 
+                    <AvatarImage
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${authSession.user.name}`}
+                      alt={authSession.user.name}
                     />
                     <AvatarFallback className="bg-gray-200 text-gray-700">
                       {authSession.user.name.slice(0, 2).toUpperCase()}
@@ -109,16 +104,18 @@ export function SiteHeader() {
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage 
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${authSession.user.name}`} 
-                        alt={authSession.user.name} 
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${authSession.user.name}`}
+                        alt={authSession.user.name}
                       />
                       <AvatarFallback className="bg-gray-200 text-gray-700">
                         {authSession.user.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium">{authSession.user.name}</span>
+                      <span className="truncate font-medium">
+                        {authSession.user.name}
+                      </span>
                       <span className="text-muted-foreground truncate text-xs">
                         {authSession.user.email}
                       </span>
@@ -127,21 +124,17 @@ export function SiteHeader() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem>
-                    Account Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    Preferences
-                  </DropdownMenuItem>
+                  <DropdownMenuItem>Account Settings</DropdownMenuItem>
+                  <DropdownMenuItem>Preferences</DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                
+
                 {/* SE Context Switching */}
-                {authSession.user.role === 'SE' && (
+                {authSession.user.role === "SE" && (
                   <>
                     <DropdownMenuItem
                       onClick={() => {
-                        signOut({ callbackUrl: '/se/select' })
+                        signOut({ callbackUrl: "/se/select" });
                       }}
                       className="cursor-pointer"
                     >
@@ -150,13 +143,13 @@ export function SiteHeader() {
                     <DropdownMenuSeparator />
                   </>
                 )}
-                
+
                 <DropdownMenuItem
                   onClick={() => {
-                    if (authSession?.user.role === 'SE') {
-                      signOut({ callbackUrl: '/se/select' })
+                    if (authSession?.user.role === "SE") {
+                      signOut({ callbackUrl: "/se/select" });
                     } else {
-                      signOut({ callbackUrl: '/login' })
+                      signOut({ callbackUrl: "/login" });
                     }
                   }}
                   className="cursor-pointer text-red-600 focus:text-red-600"
@@ -169,5 +162,5 @@ export function SiteHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }
