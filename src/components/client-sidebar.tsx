@@ -5,16 +5,16 @@ import { useSession } from "next-auth/react"
 import {
   IconBuilding,
   IconChartLine,
-  IconSettings,
   IconUsers,
-  IconWorkflow,
+  IconTrendingUp,
   IconClipboardList,
-  IconBell,
-  IconFile,
+  IconKey,
+  IconAlertTriangle,
+  IconCreditCard,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
+// import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -35,9 +35,27 @@ const clientNavMain = [
     isActive: false,
   },
   {
-    title: "Workflows",
-    url: "/client/workflows",
-    icon: IconWorkflow,
+    title: "Workflow ROI",
+    url: "/client/workflow-roi",
+    icon: IconTrendingUp,
+    isActive: false,
+  },
+  {
+    title: "Reporting",
+    url: "/client/reporting",
+    icon: IconClipboardList,
+    isActive: false,
+  },
+  {
+    title: "Credentials",
+    url: "/client/credentials",
+    icon: IconKey,
+    isActive: false,
+  },
+  {
+    title: "Exceptions",
+    url: "/client/exceptions",
+    icon: IconAlertTriangle,
     isActive: false,
   },
   {
@@ -47,32 +65,20 @@ const clientNavMain = [
     isActive: false,
   },
   {
-    title: "Notifications",
-    url: "/client/notifications",
-    icon: IconBell,
-    isActive: false,
-  },
-  {
-    title: "Reports",
-    url: "/client/reports",
-    icon: IconClipboardList,
-    isActive: false,
-  },
-  {
-    title: "Documents",
-    url: "/client/documents",
-    icon: IconFile,
+    title: "Billing",
+    url: "/client/billing",
+    icon: IconCreditCard,
     isActive: false,
   },
 ]
 
-const clientNavSecondary = [
-  {
-    title: "Settings",
-    url: "/client/settings",
-    icon: IconSettings,
-  },
-]
+// const clientNavSecondary = [
+//   {
+//     title: "Settings",
+//     url: "/client/settings",
+//     icon: IconSettings,
+//   },
+// ]
 
 export function ClientSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession()
@@ -81,6 +87,14 @@ export function ClientSidebar({ ...props }: React.ComponentProps<typeof Sidebar>
   const orgName = authSession?.user.impersonationContext?.organizationName || 
                  authSession?.user.organization?.name || 
                  "Client Portal"
+
+  const navUser = {
+    name: authSession?.user?.name ?? "User",
+    email: authSession?.user?.email ?? "",
+    avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+      authSession?.user?.name ?? "User"
+    )}`,
+  }
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -103,10 +117,9 @@ export function ClientSidebar({ ...props }: React.ComponentProps<typeof Sidebar>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={clientNavMain} />
-        <NavSecondary items={clientNavSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
+        <NavUser user={navUser} />
       </SidebarFooter>
     </Sidebar>
   )
