@@ -1,10 +1,11 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
+import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react"
 import Link from "next/link"
 import { useSelectedLayoutSegments } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
+import { Icon } from "@/components/Icon"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -19,7 +20,7 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: Icon
+    icon?: string
   }[]
 }) {
   const segments = useSelectedLayoutSegments()
@@ -47,7 +48,7 @@ export function NavMain({
                 className={isActive(item.url) ? "bg-[#E3DDDD] text-foreground font-medium" : ""}
               >
                 <Link href={item.url}>
-                  {item.icon && <item.icon />}
+                  {item.icon && <Icon name={item.icon} className="size-4" />}
                   <span>{item.title}</span>
                 </Link>
               </SidebarMenuButton>

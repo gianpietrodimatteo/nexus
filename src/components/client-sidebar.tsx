@@ -2,16 +2,7 @@
 
 import * as React from "react"
 import { useSession } from "next-auth/react"
-import {
-  IconBuilding,
-  IconChartLine,
-  IconUsers,
-  IconTrendingUp,
-  IconClipboardList,
-  IconKey,
-  IconAlertTriangle,
-  IconCreditCard,
-} from "@tabler/icons-react"
+import { IconBuilding } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
 // import { NavSecondary } from "@/components/nav-secondary"
@@ -31,43 +22,43 @@ const clientNavMain = [
   {
     title: "Dashboard",
     url: "/client",
-    icon: IconChartLine,
+    icon: "client-dashboard",
     isActive: false,
   },
   {
     title: "Workflow ROI",
     url: "/client/workflow-roi",
-    icon: IconTrendingUp,
+    icon: "workflow-roi",
     isActive: false,
   },
   {
     title: "Reporting",
     url: "/client/reporting",
-    icon: IconClipboardList,
+    icon: "reporting",
     isActive: false,
   },
   {
     title: "Credentials",
     url: "/client/credentials",
-    icon: IconKey,
+    icon: "credentials",
     isActive: false,
   },
   {
     title: "Exceptions",
     url: "/client/exceptions",
-    icon: IconAlertTriangle,
+    icon: "exceptions",
     isActive: false,
   },
   {
     title: "Users",
     url: "/client/users",
-    icon: IconUsers,
+    icon: "users",
     isActive: false,
   },
   {
     title: "Billing",
     url: "/client/billing",
-    icon: IconCreditCard,
+    icon: "billing",
     isActive: false,
   },
 ]

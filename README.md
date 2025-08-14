@@ -46,3 +46,13 @@ Client: client@acme.com / password123
 - `pnpm db:reset` - Reset database to clean state (drops all tables)
 - `pnpm lint` - Run ESLint
 - `pnpm format` - Run Prettier
+
+## Icons
+
+This project uses an automated SVG sprite. Place raw SVGs in `src/assets/icons/` and generate `public/sprite.svg` with your chosen tooling (e.g., svg-sprite-cli). Use the universal component `src/components/Icon.tsx`:
+
+```tsx
+import { Icon } from "@/components/Icon"
+
+<Icon name="dashboard" className="size-4 text-foreground" />
+```

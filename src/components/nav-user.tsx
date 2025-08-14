@@ -1,12 +1,7 @@
 "use client"
 
-import {
-  IconCreditCard,
-  IconDotsVertical,
-  IconLogout,
-  IconNotification,
-  IconUserCircle,
-} from "@tabler/icons-react"
+import { IconDotsVertical } from "@tabler/icons-react"
+import { Icon } from "@/components/Icon"
 
 import {
   Avatar,
@@ -85,21 +80,21 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <IconUserCircle />
+                <Icon name="account" className="size-4" />
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <IconCreditCard />
+                <Icon name="billing" className="size-4" />
                 Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <IconNotification />
+                <Icon name="notifications" className="size-4" />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <IconLogout />
+              <Icon name="logout" className="size-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
